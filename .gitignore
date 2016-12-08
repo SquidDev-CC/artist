@@ -2,4 +2,3 @@ build
 .howl
 .items.*
 Howl.min.lua
-recipe_dump.json
