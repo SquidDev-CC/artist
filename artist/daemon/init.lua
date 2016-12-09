@@ -100,10 +100,10 @@ local taskQueue = tasks.create(".items.tasks")
 local function formatEntry(entry)
 	return {
 		hash        = entry.hash,
-		name        = entry.name,
-		damage      = entry.damage,
+		name        = entry.meta.name,
+		damage      = entry.meta.damage,
 		count       = entry.count,
-		displayName = entry.displayName,
+		displayName = entry.meta.displayName,
 	}
 end
 
@@ -133,7 +133,7 @@ local function sendPartialChanges(entries)
 	itemVersion = itemVersion + 1
 
 	local data = { id = "update_partial", items = changes, version = itemVersion }
-	for _, handle in pairs(connections or connection.getConnections()) do
+	for _, handle in pairs(connection.getConnections()) do
 		print("[ITEM] Sending partial changes to " .. handle.id)
 		connection.send(handle, data)
 	end
@@ -161,7 +161,7 @@ taskQueue.register("redstone", function(data)
 	while redstone.getInput(config.redstoneSide) do
 		for slot, item in pairs(pickup.list()) do
 			item.slot = slot
-			local entry = items.getItemEntry(item, pickup, slot)
+			local entry = items.getItemEntry(items.hashItem(item), pickup, slot)
 			items.insert(pickup, entry, item)
 		end
 	end
@@ -184,9 +184,17 @@ taskQueue.register("extract", function(data)
 	items.extract(data.to, item, data.count)
 end)
 
+local function trace(func)
+	if debug and debug.traceback then
+		return function() assert(xpcall(func, debug.traceback)) end
+	else
+		return func
+	end
+end
+
 parallel.waitForAny(
-	taskQueue.run,
-	function()
+	trace(taskQueue.run),
+	trace(function()
 		while true do
 			local sender, task = connection.poll()
 			if task ~= nil then
@@ -194,8 +202,8 @@ parallel.waitForAny(
 				taskQueue.enqueue(task)
 			end
 		end
-	end,
-	function()
+	end),
+	trace(function()
 		os.queueEvent("redstone")
 
 		while true do
@@ -208,7 +216,7 @@ parallel.waitForAny(
 				taskQueue.enqueue { id = "redstone" }
 			end
 		end
-	end
+	end)
 )
 
 error("The daemon should never terminate. Sorry for the inconvenience", 0)

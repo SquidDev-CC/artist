@@ -50,7 +50,7 @@ local function complete(filter)
 		filter = filter:lower()
 		for _, item in pairs(items) do
 			local option = item.displayName
-			if #option + (addSpaces and 1 or 0) > #filter and string.sub(option, 1, #filter):lower() == filter then
+			if #option + 0 > #filter and string.sub(option, 1, #filter):lower() == filter then
 				local result = option:sub(#filter + 1)
 				results[#results + 1] = result
 			end
@@ -110,7 +110,7 @@ local function redraw(filter)
 
 	local width, height = term.getSize()
 
-	local maxWidth = width - 15
+	local maxWidth = width - 16
 	local format = "%" .. maxWidth .. "s \149 %5s \149 %s"
 	term.write(format:format("Item", "Dmg", "Count"))
 
