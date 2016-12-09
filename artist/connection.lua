@@ -1,32 +1,8 @@
-if not aes then os.loadAPI("artist/aes") end
-local aes = aes
-
--- Convert the password into a 32 bit long string
-local function convertPassword(password)
-	if (32 > #password) then
-		local postfix = ""
-		for i = 1, 32 - #password do
-			postfix = postfix .. string.char(0)
-		end
-		password = password .. postfix
-	else
-		password = string.sub(password, 1, 32)
-	end
-
-	local pwBytes = { string.byte(password, 1, #password) }
-	password = aes.ciphermode.encryptString(pwBytes, password, aes.ciphermode.encryptCBC)
-	password = string.sub(password, 1, 32)
-	return { string.byte(password, 1, #password) }
-end
-
-local function genRand(len)
-	local out = {}
-	for i = 1, len do out[i] = math.random(0, 255) end
-	return out
-end
+local aes = require "artist.aes"
+local genRand = aes.util.getRandomData
 
 local function open(password)
-	password = convertPassword(password)
+	password = aes.pwToKey(password, aes.AES256)
 
 	for _, side in ipairs(redstone.getSides()) do
 		if peripheral.getType(side) == "modem" then
@@ -66,7 +42,7 @@ local function open(password)
 		local connection = connections[id] or { id = id }
 		connection.key = password
 
-		local key = genRand(32)
+		local key = genRand(aes.AES256)
 		send(connection, {
 			tag = "connect",
 			key = key,

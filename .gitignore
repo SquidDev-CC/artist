@@ -2,3 +2,4 @@ build
 .howl
 .items.*
 Howl.min.lua
+startup

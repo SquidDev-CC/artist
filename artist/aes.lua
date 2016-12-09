@@ -146,12 +146,12 @@ return {
 	sub = sub,
 	invert = invert,
 	mul = mul,
-	div = dib,
+	div = div,
 	printLog = printLog,
 	printExp = printExp,
 }
 end)
-util=_W(function(_ENV, ...)
+local util=_W(function(_ENV, ...)
 -- Cache some bit operators
 local bxor = bit.bxor
 local rshift = bit.rshift
@@ -392,7 +392,7 @@ return {
 	getRandomString = getRandomString,
 }
 end)
-aes=_W(function(_ENV, ...)
+local aes=_W(function(_ENV, ...)
 -- Implementation of AES with nearly pure lua
 -- AES with lua is slow, really slow :-)
 
@@ -926,7 +926,7 @@ return {
 	toString = toString,
 }
 end)
-ciphermode=_W(function(_ENV, ...)
+local ciphermode=_W(function(_ENV, ...)
 local public = {}
 
 --
@@ -1087,15 +1087,30 @@ return public
 end)
 -- Simple API for encrypting strings.
 --
-AES128 = 16
-AES192 = 24
-AES256 = 32
+local AES128 = 16
+local AES192 = 24
+local AES256 = 32
 
-ECBMODE = 1
-CBCMODE = 2
-OFBMODE = 3
-CFBMODE = 4
-CTRMODE = 4
+local ECBMODE = 1
+local CBCMODE = 2
+local OFBMODE = 3
+local CFBMODE = 4
+local CTRMODE = 4
+
+local M = {
+	AES128 = AES128,
+	AES192 = AES192,
+	AES256 = AES256,
+
+	ECBMODE = ECBMODE,
+	CBCMODE = CBCMODE,
+	OFBMODE = OFBMODE,
+	CFBMODE = CFBMODE,
+	CTRMODE = CTRMODE,
+}
+
+M.util = util
+M.ciphermode = ciphermode
 
 local function pwToKey(password, keyLength, iv)
 	local padLength = keyLength
@@ -1120,6 +1135,7 @@ local function pwToKey(password, keyLength, iv)
 
 	return {string.byte(password,1,#password)}
 end
+M.pwToKey = pwToKey
 
 --
 -- Encrypts string data with password password.
@@ -1130,7 +1146,7 @@ end
 --
 -- mode and keyLength must be the same for encryption and decryption.
 --
-function encrypt(password, data, keyLength, mode, iv)
+function M.encrypt(password, data, keyLength, mode, iv)
 	assert(password ~= nil, "Empty password.")
 	assert(password ~= nil, "Empty data.")
 
@@ -1156,9 +1172,6 @@ function encrypt(password, data, keyLength, mode, iv)
 	end
 end
 
-
-
-
 --
 -- Decrypts string data with password password.
 -- password  - the decryption key is generated from this string
@@ -1168,7 +1181,7 @@ end
 --
 -- mode and keyLength must be the same for encryption and decryption.
 --
-function decrypt(password, data, keyLength, mode, iv)
+function M.decrypt(password, data, keyLength, mode, iv)
 	local mode = mode or CBCMODE
 	local keyLength = keyLength or AES128
 
@@ -1197,3 +1210,5 @@ function decrypt(password, data, keyLength, mode, iv)
 
 	return result
 end
+
+return M

@@ -1,7 +1,6 @@
-local dir = fs.getDir(shell.getRunningProgram())
-local items = dofile(fs.combine(dir, "items.lua"))
-local tasks = dofile(fs.combine(dir, "tasks.lua"))
-local connection = dofile(fs.combine(dir, "../connection.lua"))
+local items = require "artist.daemon.items"
+local tasks = require "artist.daemon.tasks"
+local connection = require "artist.connection"
 
 --- Create a set from a list of entries
 local function createLookup(tbl)

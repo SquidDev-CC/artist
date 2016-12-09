@@ -16,7 +16,7 @@ return function(replaceChar, history, completeFunction, callback)
 			if completions and #completions > 0 then
 				currentCompletion = 1
 			else
-				currentCompletion = nilg
+				currentCompletion = nil
 			end
 		else
 			completions = nil

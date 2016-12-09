@@ -1,9 +1,7 @@
-local dir = fs.getDir(shell.getRunningProgram())
-
-local match = dofile(fs.combine(dir, "match.lua"))
-local read = dofile(fs.combine(dir, "read.lua"))
-local dialogue = dofile(fs.combine(dir, "dialogue.lua"))
-local connection = dofile(fs.combine(dir, "../connection.lua"))
+local match = require "artist.gui.match"
+local read = require "artist.gui.read"
+local dialogue = require "artist.gui.dialogue"
+local connection = require "artist.connection"
 
 local handle = fs.open(".items.gui", "r")
 

@@ -2,21 +2,20 @@ Options:Default "trace"
 
 Tasks:clean()
 
-Tasks:pack "pack" {
+Tasks:require "require" {
 	include = {
-		"sc/*.lua",
-		"sc/aes",
+		"artist/*.lua",
 	},
-	startup = "sc/gui/init.lua",
-	output = "build/sc.lua",
+	startup = "artist/gui/init.lua",
+	output = "build/artist.lua",
 }
 
-Tasks:Task "build" { "clean", "pack" } :Description "Main build task"
+Tasks:Task "build" { "clean", "require" } :Description "Main build task"
 
 Tasks:gist "upload" (function(spec)
-	spec:summary "Various things for SwitchCraft"
+	spec:summary "Artist inventory manager"
 	spec:gist "741de26e82cdf497df7e69b6102f8717"
 	spec:from "build" {
-		include = { "sc.lua" }
+		include = { "artist.lua" }
 	}
-end) :Requires { "build/sc.lua" }
+end) :Requires { "build/artist.lua" }
