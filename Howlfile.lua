@@ -6,7 +6,7 @@ Tasks:require "require" {
 	include = {
 		"artist/*.lua",
 	},
-	startup = "artist/gui/init.lua",
+	startup = "artist/init.lua",
 	output = "build/artist.lua",
 }
 

@@ -30,7 +30,7 @@ local function require(name)
 end
 
 local globalMeta = { __index = _ENV }
-local globalEnv = setmetatable({ require = require }, globalMeta)
+local globalEnv = setmetatable({ require = require, preload = preload }, globalMeta)
 local root = fs.getDir(shell.getRunningProgram())
 
 local function toModule(file)
@@ -73,23 +73,4 @@ function globalMeta.__newindex(_, key, value)
 	error("Attempt to assign global " .. tostring(key), 2)
 end
 
-local args = { ... }
-
-if not args[1] then
-	error("Expected a module to launch with. Try 'gui' or 'daemon'", 0)
-elseif not preload["artist." .. args[1]] then
-	error("Cannot find module '" .. args[1] .. "'")
-end
-
-local success = xpcall(function()
-	preload["artist." .. args[1]](unpack(args))
-end, function(err)
-	printError(err)
-	for i = 3, 15 do
-		local _, msg = pcall(error, "", i)
-		if #msg == 0 or msg:find("^xpcall:") then break end
-		print(" ", msg)
-	end
-end)
-
-if not success then error() end
+return preload["artist"](...)

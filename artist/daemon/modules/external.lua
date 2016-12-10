@@ -26,7 +26,6 @@ local function wrap(name, costs)
 			-- Edge condition where tasks are executed on the same tick.
 			-- We sleep for one tick to allow the cost to recover
 			if delta > 1e-5 then
-				print(time, lastTime, delta)
 				sleep(delta)
 				time = os.clock()
 			end
