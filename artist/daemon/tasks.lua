@@ -1,5 +1,7 @@
 --- Represents a task queue that is persisted to disk
 
+local serialise = require "artist.serialise"
+
 local function create(filePath)
 	local queue = {}
 	local providers = {}
@@ -8,20 +10,20 @@ local function create(filePath)
 	-- Read the persisted queue from disk
 	local handle = fs.open(filePath, "r")
 	if handle then
-		queue = textutils.unserialize(handle.readAll())
+		queue = serialise.deserialise(handle.readAll())
 		handle.close()
 	end
 
 	local function persist()
 		local handle = fs.open(filePath, "w")
-		handle.writeLine("{")
+		handle.write("{")
 		for i = 1, #queue do
 			local entry = queue[i]
 			if providers[entry.id].persist then
-				handle.write(textutils.serialize(entry) .. ",")
+				handle.write(serialise.serialise(entry) .. ",")
 			end
 		end
-		handle.writeLine("}")
+		handle.write("}")
 		handle.close()
 	end
 
