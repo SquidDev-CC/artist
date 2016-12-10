@@ -105,4 +105,28 @@ return function(taskQueue, runner, items, config)
 			end
 		end
 	end)
+
+	-- Rescan one chest every n <timeframe>
+	runner.add(function()
+		local entry = nil
+		local inventories = items.getInventories()
+		while true do
+			sleep(config.rescanTimeout)
+
+			if inventories[entry] then
+				entry = next(inventories, entry)
+			else
+				entry = nil
+			end
+
+			if entry == nil then
+				-- Attempt to wrap around to the start.
+				entry = next(inventories, nil)
+			end
+
+			if entry ~= nil then
+				taskQueue.enqueue( { id = "peripheral", name = entry })
+			end
+		end
+	end)
 end

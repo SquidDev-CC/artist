@@ -21,6 +21,8 @@ if not handle then
 
 		redstoneSide = "<redstone_side>",
 		password = "<password>",
+
+		rescanTimeout = 30,
 	})
 	handle.close()
 	error("No config file found. We've created one at /.items.daemon", 0)
