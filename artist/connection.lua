@@ -1,3 +1,4 @@
+local serialise = require "artist.serialise"
 local aes = require "artist.aes"
 local genRand = aes.util.getRandomData
 
@@ -14,7 +15,7 @@ local function open(password)
 
 	--- Send to a remote connection
 	local function send(receiver, message)
-		message = textutils.serialize(message)
+		message = serialise.serialise(message)
 		message = aes.util.padByteString(message)
 
 		local key = receiver.key
@@ -34,7 +35,7 @@ local function open(password)
 			return false
 		end
 
-		return true, textutils.unserialize(decrypted)
+		return true, serialise.deserialise(decrypted)
 	end
 
 	--- Connect to a remote host, negotiating a key
@@ -61,7 +62,7 @@ local function open(password)
 					connections[id] = connection
 					return connection
 				else
-					error("Failed to connect to " .. id ": " .. (message and message.tag or textutils.serialize(message)))
+					error("Failed to connect to " .. id .. ": " .. (message and message.tag or textutils.serialize(message)))
 				end
 			end
 
