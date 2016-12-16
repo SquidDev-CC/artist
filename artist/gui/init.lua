@@ -22,13 +22,6 @@ end
 local config = textutils.unserialize(handle.readAll())
 handle.close()
 
-local connection = connection.open(config.password)
-print("Waiting for connection...")
-local handle = connection.connect(config.remote)
-print("Connected!")
-
-connection.send(handle, { id = "query_items" })
-
 local items = {}
 
 local function compareName(a, b) return a.displayName < b.displayName end
@@ -138,37 +131,57 @@ term.clear()
 
 local ok, msg
 local version = -2
+
+local conn
+local function connectionHandler(remote, action, task)
+	if action == "connect" then
+		conn.send(remote, { id = "query_items" })
+	elseif action == "data" then
+		if task.id == "update_items" then
+			version = task.version
+			items = task.items
+			redraw()
+
+			version = task.version
+		elseif task.id == "update_partial" then
+			for key, item in pairs(task.items) do
+				items[key] = item
+			end
+			redraw()
+
+			if version + 1 ~= task.version then
+				-- Request a refresh of all data
+				conn.send(remote, { id = "query_items" })
+			end
+
+			version = task.version
+		end
+	elseif action == "disconnect" then
+		error("Disconnected from " .. remote.id, 0)
+	end
+end
+
+conn = connection.open("nope", connectionHandler)
+
+-- Setup the initial connection
+conn.connect(config.remote, config.password)
+
 parallel.waitForAny(
+	conn.run,
 	function()
 		while true do
-			local sender, task = connection.receive()
-
-			if task.id == "update_items" then
-				version = task.version
-				items = task.items
-				redraw()
-
-				version = task.version
-			elseif task.id == "update_partial" then
-				for key, item in pairs(task.items) do
-					items[key] = item
-				end
-				redraw()
-
-				if version + 1 ~= task.version then
-					-- Request a refresh of all data
-					connection.send(handle, { id = "query_items" })
-				end
-
-				version = task.version
+			sleep(5)
+			for _, remote in ipairs(conn.getRemotes()) do
+				-- Ensure that the remote server is connected
+				conn.send(remote, { id = "ping"})
 			end
 		end
 	end,
 	function()
 		local readCoroutine = coroutine.create(read)
-		ok, msg = coroutine.resume(readCoroutine, nil, nil, complete, redraw)
+		assert(coroutine.resume(readCoroutine, nil, nil, complete, redraw))
 
-		while ok and coroutine.status(readCoroutine) ~= "dead" do
+		while coroutine.status(readCoroutine) ~= "dead" do
 			local ev = table.pack(os.pullEvent())
 
 			if ev[1] == "mouse_click" then
@@ -183,26 +196,21 @@ parallel.waitForAny(
 					local quantity = tonumber(dialogue("Number required", read, dX + 1, dY + 1, dWidth, dHeight))
 
 					if quantity then
-						connection.send(handle, {
-							id = "extract",
-							to = config.deposit,
-							hash = entry.hash,
-							count = quantity,
-						})
+						for _, remote in ipairs(conn.getRemotes()) do
+							conn.send(remote, {
+								id = "extract",
+								to = config.deposit,
+								hash = entry.hash,
+								count = quantity,
+							})
+						end
 					end
 
 					redraw()
 				end
 			end
 
-			ok, msg = coroutine.resume(readCoroutine, table.unpack(ev, 1, ev.n))
+			assert(coroutine.resume(readCoroutine, table.unpack(ev, 1, ev.n)))
 		end
 	end
 )
-
-term.setBackgroundColor(colours.black)
-term.setTextColor(colours.white)
-term.clear()
-term.setCursorPos(1, 1)
-
-if not ok then error(msg, 0) end

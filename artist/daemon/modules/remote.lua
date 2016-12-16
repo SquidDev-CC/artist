@@ -16,7 +16,15 @@ local function formatEntry(entry)
 end
 
 return function(taskQueue, runner, items, config)
-	local connection = connection.open(config.password)
+	local function connectionHandler(remote, action, task)
+		if action == "data" then
+			if task.id ~= "ping" then
+				task.sender = remote.id
+				taskQueue.enqueue(task)
+			end
+		end
+	end
+	local connection = connection.open(config.password, connectionHandler, print)
 
 	local itemVersion = 0
 	local function sendAllChanges(connections)
@@ -28,9 +36,9 @@ return function(taskQueue, runner, items, config)
 		end
 
 		local data = { id = "update_items", items = changes, version = itemVersion }
-		for _, handle in pairs(connections or connection.getConnections()) do
-			print("[SOCK] Sending changes to " .. handle.id)
-			connection.send(handle, data)
+		for _, remote in pairs(connections or connection.getRemotes()) do
+			print("[SOCK] Sending changes to " .. remote.id)
+			connection.send(remote, data)
 		end
 	end
 
@@ -44,32 +52,24 @@ return function(taskQueue, runner, items, config)
 		itemVersion = itemVersion + 1
 
 		local data = { id = "update_partial", items = changes, version = itemVersion }
-		for _, handle in pairs(connection.getConnections()) do
-			print("[SOCK] Sending partial changes to " .. handle.id)
-			connection.send(handle, data)
+		for _, remote in pairs(connection.getRemotes()) do
+			print("[SOCK] Sending partial changes to " .. remote.id)
+			connection.send(remote, data)
 		end
 	end
 
 	taskQueue.register("query_items", function(data)
-		local handle = connection.getConnection(data.sender)
-		if not handle then
+		local remote = connection.getRemote(data.sender)
+		if not remote then
 			print("[SOCK] Connection " .. data.sender .. " closed")
 			return
 		end
 
-		sendAllChanges({ handle })
+		sendAllChanges({ remote })
 	end, { persist = false })
 
 
 	items.addListener(sendPartialChanges)
 
-	runner.add(function()
-		while true do
-			local sender, task = connection.poll()
-			if task ~= nil then
-				task.sender = sender.id
-				taskQueue.enqueue(task)
-			end
-		end
-	end)
+	runner.add(connection.run)
 end
