@@ -157,7 +157,7 @@ local function open(password, handler, print)
 						-- We've got this far so we know we can trust the client.
 						-- Therefore it is "ok" to override the current connection.
 
-						print("[SOCK] Recieved connection request from  " .. id)
+						print("[SOCK] Recieved connection request from " .. id)
 						data = decrypted
 
 						-- Setup the new connection

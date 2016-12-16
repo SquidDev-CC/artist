@@ -17,12 +17,13 @@ if not handle then
 	handle.write(textutils.serialize{
 		pickup = "<pickup_chest>",
 		blacklist = {},
-		blacklistTypes = { "furnace" },
+		blacklistTypes = { "Furnace" },
 
 		redstoneSide = "<redstone_side>",
 		password = "<password>",
 
-		rescanTimeout = 30,
+		invRescan     = 30,
+		furnaceRescan = 10,
 	})
 	handle.close()
 	error("No config file found. We've created one at /.items.daemon", 0)
@@ -50,7 +51,7 @@ local taskQueue = tasks.create(".items.tasks")
 local runner = runner.create()
 
 taskQueue.register("extract", function(data)
-	local item = items.getItemEntries()[data.hash]
+	local item = items.getItemEntry(data.hash)
 	if not item then return end
 
 	items.extract(data.to, item, data.count)
@@ -60,6 +61,7 @@ runner.add(taskQueue.run)
 
 require "artist.daemon.modules.remote"(taskQueue, runner, items, config)
 require "artist.daemon.modules.external"(taskQueue, runner, items, config)
+require "artist.daemon.modules.smelt"(taskQueue, runner, items, config)
 
 runner.run()
 error("The daemon should never terminate. Sorry for the inconvenience", 0)

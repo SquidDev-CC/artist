@@ -52,7 +52,7 @@ end
 local function getItemEntry(hash, remote, slot)
 	local entry = itemEntries[hash]
 	if not entry then
-		if not remote then error("remote is nil", 2) end
+		if not remote then return nil end
 
 		entry = {
 			hash    = hash,
@@ -184,7 +184,7 @@ local function unloadPeripheral(name)
 end
 
 --- Extract a series of items from the system
-local function extract(to, entry, count)
+local function extract(to, entry, count, toSlot)
 	local remaining = count
 	local hash = entry.hash
 
@@ -197,7 +197,7 @@ local function extract(to, entry, count)
 			local slot = slots[i]
 
 			if slot.hash == hash then
-				local extracted = remote.pushItems(to, i, remaining)
+				local extracted = remote.pushItems(to, i, remaining, toSlot)
 
 				updateCount(entry, slot, name, -extracted)
 				remaining = remaining - extracted

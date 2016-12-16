@@ -141,8 +141,6 @@ local function connectionHandler(remote, action, task)
 			version = task.version
 			items = task.items
 			redraw()
-
-			version = task.version
 		elseif task.id == "update_partial" then
 			for key, item in pairs(task.items) do
 				items[key] = item
