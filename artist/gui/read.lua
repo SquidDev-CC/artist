@@ -126,7 +126,7 @@ return function(replaceChar, history, completeFunction, callback)
 		end,
 
 		-- Exit
-		[keys.e] = function()
+		[keys.d] = function()
 			line = nil
 
 			return true
@@ -156,7 +156,7 @@ return function(replaceChar, history, completeFunction, callback)
 		end,
 
 		-- Ctrl+Right
-		[keys.d] = function()
+		[keys.e] = function()
 			clear()
 			pos = (line:find("%s", pos + 1)) or #line
 			recomplete()

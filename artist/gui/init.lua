@@ -22,6 +22,8 @@ end
 local config = textutils.unserialize(handle.readAll())
 handle.close()
 
+if tonumber(config.remote) == nil then error("Expected number for remote, got '" .. tostring(config.remote) .. "'", 0) end
+
 local items = {}
 
 local function compareName(a, b) return a.displayName < b.displayName end
@@ -53,7 +55,7 @@ local function complete(filter)
 end
 
 local display
-local lastFilter = nil
+local scroll, lastFilter = 0, nil
 local function redraw(filter)
 	filter = filter or lastFilter
 	lastFilter = filter
@@ -103,19 +105,52 @@ local function redraw(filter)
 
 	local width, height = term.getSize()
 
-	local maxWidth = width - 16
+	local itemHeight = height - 2
+	local itemCount = #display - itemHeight
+	if itemCount < 0 then itemCount = 0 end
+
+	if scroll < 0 then scroll = 0 end
+	if scroll > itemCount then scroll = itemCount end
+
+	local scrollHeight, scrollOffset
+	if itemCount == 0 then
+		scrollHeight = itemHeight
+		scrollOffset = 0
+	else
+		scrollHeight = math.ceil(itemHeight * itemHeight / itemCount)
+		scrollOffset = math.floor((itemHeight - scrollHeight) * scroll / itemCount)
+	end
+	local scrollEnd = scrollOffset + scrollHeight
+
+	local maxWidth = width - 17
 	local format = "%" .. maxWidth .. "s \149 %5s \149 %s"
 	term.write(format:format("Item", "Dmg", "Count"))
 
 	term.setBackgroundColor(colours.grey)
 	term.setTextColor(colours.white)
-	for i = 1, height - 2 do
+	for i = 1, itemHeight do
 		term.setCursorPos(1, i + 2)
 		term.clearLine()
 
-		local item = display[i]
+		local item = display[scroll + i]
 		if item then
-			term.write(format:format(item.displayName:sub(1, maxWidth), item.damage, item.count))
+			term.write(format:format(
+				(item.craft and "\16 " or "  ") .. item.displayName:sub(1, maxWidth - 2),
+				item.damage,
+				item.count
+			))
+		end
+
+		if i > scrollOffset and i <= scrollEnd then
+			term.setCursorPos(width, i + 2)
+
+			term.setBackgroundColor(colours.white)
+			term.setTextColor(colours.grey)
+
+			term.write("\149")
+
+			term.setBackgroundColor(colours.grey)
+			term.setTextColor(colours.white)
 		end
 	end
 
@@ -206,9 +241,17 @@ parallel.waitForAny(
 
 					redraw()
 				end
+			elseif ev[1] == "mouse_scroll" then
+				scroll = scroll + ev[2]
+				redraw()
 			end
 
 			assert(coroutine.resume(readCoroutine, table.unpack(ev, 1, ev.n)))
 		end
 	end
 )
+
+term.setCursorPos(1, 1)
+term.setBackgroundColor(colors.black)
+term.setTextColor(colors.white)
+term.clear()
