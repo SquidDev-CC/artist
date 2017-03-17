@@ -1,3 +1,5 @@
+--- Converts recipe_dump.json to recipe_dump.lua
+
 -- Decoding
 local whites = {['\n']=true; ['\r']=true; ['\t']=true; [' ']=true; [',']=true; [':']=true}
 local controls = {["\n"]="\\n", ["\r"]="\\r", ["\t"]="\\t", ["\b"]="\\b", ["\f"]="\\f", ["\""]="\\\"", ["\\"]="\\\\"}
@@ -120,17 +122,17 @@ local function decode(str)
 end
 
 print("Loading file")
-local handle = io.open("recipe_dump.json", "r")
+local handle = io.open(shell.resolve("recipe_dump.json"), "r")
 local data = handle:read("*a")
 handle:close()
 
 print("Decoding")
 local decoded = decode(data)
-local serialise = dofile("artist/serialise.lua")
+local serialise = dofile(fs.combine(fs.getDir(shell.getRunningProgram()), "artist/serialise.lua"))
 
 local converted = serialise.serialise(decoded)
 
 print("Writing")
-local handle = io.open("recipe_dump.lua", "w")
+local handle = io.open(shell.resolve("recipe_dump.lua"), "w")
 handle:write(converted)
 handle:close()

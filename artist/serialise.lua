@@ -1,3 +1,6 @@
+--- A varient of textutils's serialise functionality, but it doesn't emit
+-- useless whitespace.
+
 local luaKeywords = {
 	["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true,
 	["elseif"] = true, ["end"] = true, ["false"] = true, ["for"] = true,
@@ -18,13 +21,15 @@ local function serialiseImpl(t, tracking, out)
 		out[#out + 1] = "{"
 
 		local seen = {}
+		local first = true
 		for k,v in ipairs(t) do
+			if first then first = false else out[#out + 1] = "," end
 			seen[k] = true
 			serialiseImpl(v, tracking, out)
-			out[#out + 1] = ","
 		end
 		for k,v in pairs(t) do
 			if not seen[k] then
+				if first then first = false else out[#out + 1] = "," end
 				local entry
 				if type(k) == "string" and not luaKeywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
 					out[#out + 1] = k .. "="
@@ -35,7 +40,6 @@ local function serialiseImpl(t, tracking, out)
 					out[#out + 1] = "]="
 					serialiseImpl(v, tracking, out)
 				end
-				out[#out + 1] = ","
 			end
 		end
 		out[#out + 1] = "}"
