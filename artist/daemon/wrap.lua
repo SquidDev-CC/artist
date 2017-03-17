@@ -14,6 +14,10 @@ local function wrap(name)
 
 	local out = {}
 	local wrapped = peripheral.wrap(name)
+	if not wrapped then
+		error("Cannot wrap peripheral '" .. name .. "'")
+	end
+
 	for name, func in pairs(wrapped) do
 		local cost = (costs[name] or defaultCost) * 0.005
 

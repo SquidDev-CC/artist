@@ -53,12 +53,16 @@ return function(taskQueue, runner, items, config)
 	--- A task which will insert items into the system from a chest whilst a
 	-- redstone signal is present.
 	taskQueue.register("pickup", function(data)
-		while redstone.getInput(config.redstoneSide) do
+		while true do
+			local count = 0
 			for slot, item in pairs(pickup.list()) do
+				count = count + 1
 				item.slot = slot
 				local entry = items.getItemEntry(items.hashItem(item), pickup, slot)
 				items.insert(pickup, entry, item)
 			end
+
+			if count == 0 then break end
 		end
 	end, { persist = false, unique = true })
 
@@ -66,14 +70,22 @@ return function(taskQueue, runner, items, config)
 	runner.add(function()
 		taskQueue.enqueue { id = "pickup" }
 
+		local timer
+		if config.pickupRescan > 0 then
+			timer = os.startTimer(config.pickupRescan)
+		end
+
 		while true do
 			local ev, name = os.pullEvent()
 			if ev == "peripheral" then
 				taskQueue.enqueue { id = "peripheral", name = name }
 			elseif ev == "peripheral_detach" then
 				taskQueue.enqueue { id = "peripheral_detach", name = name }
-			elseif ev == "redstone" then
+			elseif ev == "redstone" and redstone.getInput(config.redstoneSide) then
 				taskQueue.enqueue { id = "pickup" }
+			elseif ev == "timer" and name == timer then
+				taskQueue.enqueue { id = "pickup" }
+				timer = os.startTimer(config.pickupRescan)
 			end
 		end
 	end)

@@ -11,6 +11,7 @@ local function formatEntry(entry)
 		name        = entry.meta.name,
 		damage      = entry.meta.damage,
 		count       = entry.count,
+		craft       = entry.craft,
 		displayName = entry.meta.displayName,
 	}
 end

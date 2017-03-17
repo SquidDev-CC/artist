@@ -9,6 +9,12 @@ local function createLookup(tbl)
 	return out
 end
 
+local function contains(elem, tbl)
+	for i = 1, #tbl do
+		if tbl[i] == elem then return true end
+	end
+end
+
 local handle = fs.open(".items.daemon", "r")
 
 -- Write default config if we don't have it
@@ -23,7 +29,9 @@ if not handle then
 		password = "<password>",
 
 		invRescan     = 30,
+		pickupRescan  = 0,
 		furnaceRescan = 10,
+		cacheItems    = true,
 	})
 	handle.close()
 	error("No config file found. We've created one at /.items.daemon", 0)
@@ -33,6 +41,10 @@ end
 -- Load the actual config
 local config = textutils.unserialize(handle.readAll())
 handle.close()
+
+if not contains(config.redstoneSide, rs.getSides()) then
+	error("No such side " .. tostring(config.redstoneSide))
+end
 
 --- Setup various blacklists
 local blacklist = createLookup(config.blacklist)
@@ -59,6 +71,7 @@ end)
 
 runner.add(taskQueue.run)
 
+require "artist.daemon.modules.craft"(taskQueue, runner, items, config)
 require "artist.daemon.modules.remote"(taskQueue, runner, items, config)
 require "artist.daemon.modules.external"(taskQueue, runner, items, config)
 require "artist.daemon.modules.smelt"(taskQueue, runner, items, config)
