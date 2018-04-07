@@ -10,6 +10,7 @@ function Inventories:initialize(context)
 
   self.inventory_rescan = context:get_config("inventory_rescan", 30)
   self.blacklist = context:get_config("inventory_blacklist", {})
+  self.blacklist_types = context:get_config("peripheral_blacklist", { "turtle", "minecraft:furnace" })
 
   -- Convert list into lookup
   for i = 1, #self.blacklist do
@@ -19,6 +20,15 @@ function Inventories:initialize(context)
       self.blacklist[i] = nil
     end
   end
+
+    -- Convert list into lookup
+    for i = 1, #self.blacklist_types do
+      local name = self.blacklist_types[i]
+      if name ~= nil then
+        self.blacklist_types[name] = true
+        self.blacklist_types[i] = nil
+      end
+    end
 
   self.mediator:subscribe({ "event", "peripheral" }, function(name)
     if self:blacklisted(name) then return end
@@ -91,7 +101,7 @@ function Inventories:add_blacklist(name)
 end
 
 function Inventories:blacklisted(name)
-  return self.blacklist[name] ~= nil
+  return self.blacklist[name] ~= nil or self.blacklist_types[peripheral.getType(name)] ~= nil
 end
 
 return Inventories

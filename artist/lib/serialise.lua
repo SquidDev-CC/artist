@@ -75,7 +75,7 @@ return {
   unserialise = deserialise,
 
   serialise_to = function(path, data)
-    local out = serialise(data)
+    local out = textutils.serialise(data)
 
     local h = fs.open(path, "w")
     h.write(out)

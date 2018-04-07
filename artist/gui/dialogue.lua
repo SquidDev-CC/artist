@@ -74,9 +74,9 @@ return function(message, read, dX, dY, dWidth, dHeight)
 
   local value = ""
   local readCoroutine = coroutine.create(read)
-  coroutine.resume(readCoroutine, nil, nil, nil, function(x) value = x end)
+  assert(coroutine.resume(readCoroutine, nil, nil, nil, nil, function(x) value = x end))
 
-  while coroutine.status(readCoroutine) ~= "dead" do
+  while true do
     local ev = table.pack(os.pullEvent())
 
     if ev[1] == "mouse_click" then
@@ -88,17 +88,21 @@ return function(message, read, dX, dY, dWidth, dHeight)
         value = nil
         break
       end
-    elseif ev[1] == "key" and ev[2] == keys.enter then
-      break
     end
 
-    coroutine.resume(readCoroutine, table.unpack(ev, 1, ev.n))
+    local ok, res = coroutine.resume(readCoroutine, table.unpack(ev, 1, ev.n))
+    if not ok then error(res) end
+    if coroutine.status(readCoroutine) == "dead" then
+      value = res
+      break
+    end
   end
 
   term.redirect(original)
   term.setCursorPos(x, y)
   term.setBackgroundColor(back)
   term.setTextColor(fore)
+  term.setCursorBlink(true)
 
   return value
 end

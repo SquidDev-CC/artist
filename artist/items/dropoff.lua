@@ -40,11 +40,14 @@ return function(context)
     end
   end)
 
-  --- Register a thread which just scans chests periodically
+  -- Register a thread which just scans chests periodically
+  -- We use a medium priority level as we want importing to be fast.
   context:add_thread(function()
     while true do
       task_queue:push({
         id = "item_dropoff",
+        priority = 10,
+        persist = false,
         unique = true
       })
 

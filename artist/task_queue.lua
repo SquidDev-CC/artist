@@ -24,9 +24,21 @@ function TaskQueue:initialize(context)
       end
 
       self.log("[TASK] Executing " .. task.id)
-
       self.mediator:publish( { "task", task.id }, task)
+      self.log("[TASK] Executed " .. task.id)
+
       if task.persist then self:save() end
+    end
+  end)
+
+  -- Add a thread which re-publishes events to mediator
+  context:add_thread(function()
+    local channels = self.mediator:getChannel({ "event" })
+    while true do
+      local event = table.pack(os.pullEvent())
+      -- self.log("[EVENT] " .. textutils.serialize(event):gsub("%s+", " "))
+      local channel = channels.channels[event[1]]
+      if channel ~= nil then channel:publish({}, table.unpack(event, 2, event.n)) end
     end
   end)
 end

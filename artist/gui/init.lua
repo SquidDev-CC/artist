@@ -141,8 +141,6 @@ return function(context)
   local mediator = context:get_class "artist.lib.mediator"
   local deposit = context:get_config("pickup_chest", "minecraft:chest_xx")
 
-  local read_coroutine = coroutine.create(read)
-
   mediator:subscribe( { "items", "change" }, function(change)
     for item in pairs(change) do
       items[item.hash] = {
@@ -154,7 +152,10 @@ return function(context)
       }
     end
 
-    redraw()
+    if not redraw_request then
+      redraw_request = true
+      os.queueEvent("artist_redraw")
+    end
   end)
 
   context:add_thread(function()
@@ -163,9 +164,15 @@ return function(context)
     term.setTextColor(colours.black)
     term.clear()
 
-    assert(coroutine.resume(read_coroutine, nil, nil, complete, redraw))
+    local read_coroutine = coroutine.create(read)
+    assert(coroutine.resume(read_coroutine, nil, nil, complete, nil, redraw))
     while coroutine.status(read_coroutine) ~= "dead" do
       local ev = table.pack(os.pullEvent())
+
+      if redraw_request then
+        redraw_request = false
+        redraw()
+      end
 
       if ev[1] == "mouse_click" then
         local index = ev[4] - 2
@@ -187,6 +194,20 @@ return function(context)
       elseif ev[1] == "mouse_scroll" then
         scroll = scroll + ev[2]
         redraw()
+      elseif ev[1] == "key" then
+        if ev[2] == keys.pageDown then
+          scroll = scroll + 10
+          redraw()
+        elseif ev[2] == keys.pageUp then
+          scroll = scroll - 10
+          redraw()
+        elseif ev[2] == keys.down then
+          scroll = scroll + 1
+          redraw()
+        elseif ev[2] == keys.up then
+          scroll = scroll - 1
+          redraw()
+        end
       end
 
       assert(coroutine.resume(read_coroutine, table.unpack(ev, 1, ev.n)))

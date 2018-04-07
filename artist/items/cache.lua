@@ -10,6 +10,8 @@ return function(context)
 
   -- When items have changed, reload the cache
   mediator:subscribe( { "items", "change" }, function()
+    if not cache then return end
+
     local entries, inventories = {}, {}
 
     for hash, entry in pairs(items.item_cache) do
@@ -28,6 +30,8 @@ return function(context)
     -- Push a super-high priority cache loader task. This ensures we run after
   -- loading has finished but before we start syncing peripherals.
   mediator:subscribe( { "task", "load_cache" }, function()
+    if not cache then return end
+
     local cached = serialise.deserialise_from(".artist.cache")
     if cached then
       local item_cache = items.item_cache
@@ -44,7 +48,8 @@ return function(context)
         assert(not items.inventories[name], "Already have peripheral " .. name)
 
         if peripheral.getType(name) == nil or inventories:blacklisted(name) then
-          inventories:unload_peripheral(name)
+          items.inventories[name] = { slots = v }
+          items:unload_peripheral(name)
         else
           items.inventories[name] = {
             slots = v,

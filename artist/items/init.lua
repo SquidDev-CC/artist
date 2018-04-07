@@ -175,6 +175,7 @@ function Items:unload_peripheral(name)
   end
 
   self:broadcast_change(dirty)
+  self.log("[ITEMS] Unloaded " .. name)
 end
 
 --- Extract a series of items from the system
