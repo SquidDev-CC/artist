@@ -1,3 +1,5 @@
+local read = require "artist.gui.read"
+
 local function drawBorderCell(term, back, border, char, invert)
   if invert then
     term.setBackgroundColor(border)
@@ -33,7 +35,7 @@ local function drawBorder(term, back, border, x, y, width, height)
   drawBorderCell(term, back, border, "\129", false)
 end
 
-return function(message, read, dX, dY, dWidth, dHeight)
+return function(message, dX, dY, dWidth, dHeight, complete, default)
   local x, y = term.getCursorPos()
   local back, fore = term.getBackgroundColor(), term.getTextColor()
   local original = term.current()
@@ -74,7 +76,7 @@ return function(message, read, dX, dY, dWidth, dHeight)
 
   local value = ""
   local readCoroutine = coroutine.create(read)
-  assert(coroutine.resume(readCoroutine, nil, nil, nil, nil, function(x) value = x end))
+  assert(coroutine.resume(readCoroutine, complete, default, function(x) value = x end))
 
   while true do
     local ev = table.pack(os.pullEvent())
@@ -88,10 +90,14 @@ return function(message, read, dX, dY, dWidth, dHeight)
         value = nil
         break
       end
+    elseif ev[1] == "key" and ev[2] == keys.enter then
+      break
     end
 
     local ok, res = coroutine.resume(readCoroutine, table.unpack(ev, 1, ev.n))
     if not ok then error(res) end
+
+    -- If the coroutine died (due to enter or C-d then use the return value)
     if coroutine.status(readCoroutine) == "dead" then
       value = res
       break

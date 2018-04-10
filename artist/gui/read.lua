@@ -8,13 +8,7 @@ local function clamp(value, min, max)
   return value
 end
 
-return function(_sReplaceChar, _tHistory, _fnComplete, _sDefault, callback)
-  if _sReplaceChar ~= nil and type(_sReplaceChar) ~= "string" then
-    error("bad argument #1 (expected string, got " .. type(_sReplaceChar) .. ")", 2)
-  end
-  if _tHistory ~= nil and type(_tHistory) ~= "table" then
-    error("bad argument #2 (expected table, got " .. type(_tHistory) .. ")", 2)
-  end
+return function(_fnComplete, _sDefault, changed)
   if _fnComplete ~= nil and type(_fnComplete) ~= "function" then
     error("bad argument #3 (expected function, got " .. type(_fnComplete) .. ")", 2)
   end
@@ -29,10 +23,8 @@ return function(_sReplaceChar, _tHistory, _fnComplete, _sDefault, callback)
   local sLine = _sDefault or ""
   local nPos, nScroll = #sLine, 0
 
-  local nHistoryPos
   local tDown = {}
   local nMod = 0
-  if _sReplaceChar then _sReplaceChar = _sReplaceChar:sub(1, 1) end
 
   local tCompletions
   local nCompletion
@@ -93,9 +85,8 @@ return function(_sReplaceChar, _tHistory, _fnComplete, _sDefault, callback)
 
     local cx,cy = term.getCursorPos()
     term.setCursorPos(sx, cy)
-    local sReplace = (_bClear and " ") or _sReplaceChar
-    if sReplace then
-      term.write(string.rep(sReplace, math.max(#sLine - nScroll, 0)))
+    if _bClear then
+      term.write(string.rep(" ", math.max(#sLine - nScroll, 0)))
     else
       term.write(string.sub(sLine, nScroll + 1))
     end
@@ -108,21 +99,19 @@ return function(_sReplaceChar, _tHistory, _fnComplete, _sDefault, callback)
         oldBg = term.getBackgroundColor()
         if complete_fg >= 0 then term.setTextColor(complete_fg) end
         if complete_bg >= 0 then term.setBackgroundColor(complete_bg) end
-      end
-      if sReplace then
-        term.write(string.rep(sReplace, #sCompletion))
-      else
+
         term.write(sCompletion)
-      end
-      if not _bClear then
+
         term.setTextColor(oldText)
         term.setBackgroundColor(oldBg)
+      else
+        term.write(string.rep(" ", #sCompletion))
       end
     end
 
     term.setCursorPos(sx + nPos - nScroll, cy)
 
-    if callback ~= nil then callback(sLine) end
+    if changed ~= nil then changed(sLine) end
   end
 
   local function clear()
@@ -167,14 +156,6 @@ return function(_sReplaceChar, _tHistory, _fnComplete, _sDefault, callback)
       if param == keys.leftCtrl or param == keys.rightCtrl or param == keys.leftAlt or param == keys.rightAlt then
         tDown[param] = true
         updateModifier()
-      elseif param == keys.enter then
-        -- Enter
-        if nCompletion then
-          clear()
-          uncomplete()
-          redraw()
-        end
-        break
       elseif nMod == 1 and param == keys.d then
         -- Enter
         if nCompletion then
@@ -239,35 +220,6 @@ return function(_sReplaceChar, _tHistory, _fnComplete, _sDefault, callback)
               nCompletion = 1
             end
           end
-          redraw()
-        elseif _tHistory then
-          -- Cycle history
-          clear()
-          if param == keys.up or param == keys.p then
-            -- Up
-            if nHistoryPos == nil then
-              if #_tHistory > 0 then
-                nHistoryPos = #_tHistory
-              end
-            elseif nHistoryPos > 1 then
-              nHistoryPos = nHistoryPos - 1
-            end
-          elseif param == keys.down or param == keys.n then
-            -- Down
-            if nHistoryPos == #_tHistory then
-              nHistoryPos = nil
-            elseif nHistoryPos ~= nil then
-              nHistoryPos = nHistoryPos + 1
-            end
-          end
-          if nHistoryPos then
-            sLine = _tHistory[nHistoryPos]
-            nPos, nScroll = #sLine, 0
-          else
-            sLine = ""
-            nPos, nScroll = 0, 0
-          end
-          uncomplete()
           redraw()
         end
       elseif nMod == 0 and param == keys.backspace then

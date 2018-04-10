@@ -2,7 +2,6 @@ local match = require "artist.gui.match"
 local read = require "artist.gui.read"
 local dialogue = require "artist.gui.dialogue"
 
-local function compare_name(a, b) return a.displayName < b.displayName end
 local function compare_count(a, b)
   if a.count == b.count then
     return a.displayName >= b.displayName
@@ -11,26 +10,17 @@ local function compare_count(a, b)
   end
 end
 
-local function compare_hash_lookup(lookup)
-  return function(a, b) return lookup[a.hash] < lookup[b.hash] end
+local function compare_scores(scores)
+  return function(a, b)
+    if scores[a] == scores[b] then
+      return compare_count(a, b)
+    else
+      return scores[a] > scores[b]
+    end
+  end
 end
 
 local items = {}
-
-local function complete(filter)
-  local results = {}
-  if filter ~= "" and filter ~= nil then
-    filter = filter:lower()
-    for _, item in pairs(items) do
-      local option = item.displayName
-      if #option + 0 > #filter and string.sub(option, 1, #filter):lower() == filter then
-        local result = option:sub(#filter + 1)
-        results[#results + 1] = result
-      end
-    end
-  end
-  return results
-end
 
 local display
 local scroll, last_filter = 0, nil
@@ -48,28 +38,23 @@ local function redraw(filter)
 
     table.sort(display, compare_count)
   else
-    local lookup = {}
+    local scores = {}
     display = {}
 
     for _, item in pairs(items) do
       if item.count > 0 then
-        local match1, score1 = match(item.name, filter)
-        local match2, score2 = match(item.displayName, filter)
+        local score1 = match(item.name, filter)
+        local score2 = match(item.displayName, filter)
 
-        local score
-        if match1 and match2 then score = math.max(score1, score2)
-        elseif match1 then        score = score1
-        elseif match2 then        score = score2
-        end
-
-        if score then
-          lookup[item.hash] = -score
+        local score = math.max(score1, score2)
+        if score > 0 then
+          scores[item] = score
           display[#display + 1] = item
         end
       end
     end
 
-    table.sort(display, compare_hash_lookup(lookup))
+    table.sort(display, compare_scores(scores))
   end
 
   local x, y = term.getCursorPos()
@@ -165,7 +150,10 @@ return function(context)
     term.clear()
 
     local read_coroutine = coroutine.create(read)
-    assert(coroutine.resume(read_coroutine, nil, nil, complete, nil, redraw))
+    assert(coroutine.resume(read_coroutine, nil, nil,
+      function(value) if value ~= last_filter then redraw(value) end end
+    ))
+
     while coroutine.status(read_coroutine) ~= "dead" do
       local ev = table.pack(os.pullEvent())
 
@@ -183,7 +171,14 @@ return function(context)
           local dWidth, dHeight = math.min(width - 2, 30), 8
           local dX, dY = math.floor((width - dWidth) / 2), math.floor((height - dHeight) / 2)
 
-          local quantity = tonumber(dialogue("Number required", read, dX + 1, dY + 1, dWidth, dHeight))
+          -- We provide a text box which uses 64 when empty. Yes, I'm sorry for how this
+          -- is implemented.
+          local quantity = dialogue("Number required", dX + 1, dY + 1, dWidth, dHeight,
+            function(x) if x == "" then return { "64" } else return {} end end
+          )
+          if quantity == ""
+          then quantity = 64
+          else quantity = tonumber(quantity) end
 
           if quantity then
             mediator:publish( { "items", "extract" }, deposit, entry.hash, quantity)
