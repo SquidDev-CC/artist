@@ -1,6 +1,7 @@
 local read = require "artist.gui.read"
+local gets, getso = require "artist.lib.tbl".gets, require "artist.lib.tbl".getso
 
-local function drawBorderCell(term, back, border, char, invert)
+local function draw_border_cell(term, back, border, char, invert)
   if invert then
     term.setBackgroundColor(border)
     term.setTextColor(back)
@@ -12,103 +13,102 @@ local function drawBorderCell(term, back, border, char, invert)
   term.write(char)
 end
 
-local function drawBorder(term, back, border, x, y, width, height)
+local function draw_border(term, back, border, x, y, width, height)
   -- Write border
   term.setCursorPos(x, y)
-  drawBorderCell(term, back, border, "\159", true)
-  drawBorderCell(term, back, border, ("\143"):rep(width - 2), true)
-  drawBorderCell(term, back, border, "\144", false)
+  draw_border_cell(term, back, border, "\159", true)
+  draw_border_cell(term, back, border, ("\143"):rep(width - 2), true)
+  draw_border_cell(term, back, border, "\144", false)
 
   for dy = 1, height - 1 do
     term.setCursorPos(x, dy + y)
-    drawBorderCell(term, back, border, "\149", true)
+    draw_border_cell(term, back, border, "\149", true)
 
     term.setBackgroundColor(back)
     term.write((" "):rep(width - 2))
 
-    drawBorderCell(term, back, border, "\149", false)
+    draw_border_cell(term, back, border, "\149", false)
   end
 
   term.setCursorPos(x, height + y - 1)
-  drawBorderCell(term, back, border, "\130", false)
-  drawBorderCell(term, back, border, ("\131"):rep(width - 2), false)
-  drawBorderCell(term, back, border, "\129", false)
+  draw_border_cell(term, back, border, "\130", false)
+  draw_border_cell(term, back, border, ("\131"):rep(width - 2), false)
+  draw_border_cell(term, back, border, "\129", false)
 end
 
-return function(message, dX, dY, dWidth, dHeight, complete, default)
+return function(options)
   local x, y = term.getCursorPos()
   local back, fore = term.getBackgroundColor(), term.getTextColor()
   local original = term.current()
 
-  local dialogue = window.create(original, dX, dY, dWidth, dHeight)
-  dialogue.setBackgroundColor(colours.white)
-  dialogue.setTextColor(colours.grey)
-  dialogue.clear()
-
-  dialogue.setCursorPos(2, 2)
-  dialogue.write(message)
-
-  drawBorder(dialogue, colours.white, colours.grey, 1, 3, dWidth, 3)
-
-  -- Write OK button
-  drawBorder(dialogue, colours.white, colours.green, 2, 6, 4, 3)
-
-  dialogue.setCursorPos(3, 7)
-  dialogue.setTextColor(colours.white)
-  dialogue.setBackgroundColor(colours.green)
-  dialogue.write("OK")
-
-  -- -- Write cancel button
-  drawBorder(dialogue, colours.white, colours.red, dWidth - 8, 6, 8, 3)
-
-  dialogue.setCursorPos(dWidth - 7, 7)
-  dialogue.setTextColor(colours.white)
-  dialogue.setBackgroundColor(colours.red)
-  dialogue.write("Cancel")
+  local dx, dy = gets(options, "x", "number"), gets(options, "y", "number")
+  local dwidth, dheight = gets(options, "width", "number"), gets(options, "height", "number")
+  local message = gets(options, "message", "string")
+  if #message > dwidth - 2 then message = message:sub(1, dwidth - 5) .. "..." end
 
   -- Read input
-  local input = window.create(original, dX + 1, dY + 3, dWidth - 2, 1, true)
-  input.setTextColor(colours.white)
-  input.setBackgroundColor(colours.grey)
-  input.clear()
-
-  term.redirect(input)
-
   local value = ""
-  local readCoroutine = coroutine.create(read)
-  assert(coroutine.resume(readCoroutine, complete, default, function(x) value = x end))
+  local reader = read {
+    x = dx + 1, y = dy + 3, width = dwidth - 2,
+    fg = colours.white, bg = colours.grey,
 
-  while true do
-    local ev = table.pack(os.pullEvent())
+    default = options.default, complete = options.complete,
+    changed = function(x) value = x end,
+  }
 
-    if ev[1] == "mouse_click" then
-      local x, y = ev[3] - dX + 1, ev[4] - dY + 1
+  return {
+    attach = function() reader.attach() end,
+    detach = function() reader.detach() end,
 
-      if y == 7 and x >= 2 and x <= 6 then
-        break
-      elseif y == 7 and x >= dWidth - 7 and x <= dWidth - 1 then
-        value = nil
-        break
+    restore = function() reader.restore() end,
+
+    draw = function()
+      -- Draw the background
+      term.setBackgroundColor(colours.white)
+      term.setTextColor(colours.grey)
+      local row = (" "):rep(dwidth)
+      for i = 1, dheight do
+        term.setCursorPos(dx, dy + i - 1)
+        term.write(row)
       end
-    elseif ev[1] == "key" and ev[2] == keys.enter then
-      break
-    end
 
-    local ok, res = coroutine.resume(readCoroutine, table.unpack(ev, 1, ev.n))
-    if not ok then error(res) end
+      -- Draw the message
+      term.setCursorPos(dx + 1, dy + 1)
+      term.write(message)
 
-    -- If the coroutine died (due to enter or C-d then use the return value)
-    if coroutine.status(readCoroutine) == "dead" then
-      value = res
-      break
-    end
-  end
+      -- Write OK button
+      draw_border(term, colours.white, colours.green, dx + 1, dy + 5, 4, 3)
+      term.setCursorPos(dx + 2, dy + 6)
+      term.setTextColor(colours.white)
+      term.setBackgroundColor(colours.green)
+      term.write("OK")
 
-  term.redirect(original)
-  term.setCursorPos(x, y)
-  term.setBackgroundColor(back)
-  term.setTextColor(fore)
-  term.setCursorBlink(true)
+      -- -- Write cancel button
+      draw_border(term, colours.white, colours.red, dx + dwidth - 9, dy + 5, 8, 3)
+      term.setCursorPos(dx + dwidth - 8, dy + 6)
+      term.setTextColor(colours.white)
+      term.setBackgroundColor(colours.red)
+      term.write("Cancel")
 
-  return value
+      draw_border(term, colours.white, colours.grey, dx, dy + 2, dwidth, 3)
+      reader.draw()
+    end,
+
+    update = function(event)
+      if event[1] == "mouse_click" then
+        local x, y = event[3] - dx + 1, event[4] - dy + 1
+
+        if y == 7 and x >= 2 and x <= 6 then
+          return false, value
+        elseif y == 7 and x >= dwidth - 7 and x <= dwidth - 1 then
+          return false, nil
+        end
+      elseif event[1] == "key" and event[2] == keys.enter then
+        return false, value
+      end
+
+      local ok = reader.update(event)
+      if ok == false then return false, nil end
+    end,
+  }
 end

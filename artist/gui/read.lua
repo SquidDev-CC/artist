@@ -1,6 +1,4 @@
---- Additional readline
-local complete_fg = colours.lightGrey
-local complete_bg = -1
+local gets, getso = require "artist.lib.tbl".gets, require "artist.lib.tbl".getso
 
 local function clamp(value, min, max)
   if value < min then return min end
@@ -8,19 +6,13 @@ local function clamp(value, min, max)
   return value
 end
 
-return function(_fnComplete, _sDefault, changed)
-  if _fnComplete ~= nil and type(_fnComplete) ~= "function" then
-    error("bad argument #3 (expected function, got " .. type(_fnComplete) .. ")", 2)
-  end
-  if _sDefault ~= nil and type(_sDefault) ~= "string" then
-    error("bad argument #4 (expected string, got " .. type(_sDefault) .. ")", 2)
-  end
+local function read(term, fnComplete, sDefault, fnChanged, nCompleteFg)
   term.setCursorBlink(true)
 
   local w = term.getSize()
   local sx = term.getCursorPos()
 
-  local sLine = _sDefault or ""
+  local sLine = sDefault or ""
   local nPos, nScroll = #sLine, 0
 
   local tDown = {}
@@ -29,8 +21,8 @@ return function(_fnComplete, _sDefault, changed)
   local tCompletions
   local nCompletion
   local function recomplete()
-    if _fnComplete and nPos == #sLine then
-      tCompletions = _fnComplete(sLine)
+    if fnComplete and nPos == #sLine then
+      tCompletions = fnComplete(sLine)
       if tCompletions and #tCompletions > 0 then
         nCompletion = 1
       else
@@ -97,11 +89,8 @@ return function(_fnComplete, _sDefault, changed)
       if not _bClear then
         oldText = term.getTextColor()
         oldBg = term.getBackgroundColor()
-        if complete_fg >= 0 then term.setTextColor(complete_fg) end
-        if complete_bg >= 0 then term.setBackgroundColor(complete_bg) end
-
+        term.setTextColor(nCompleteFg)
         term.write(sCompletion)
-
         term.setTextColor(oldText)
         term.setBackgroundColor(oldBg)
       else
@@ -111,7 +100,7 @@ return function(_fnComplete, _sDefault, changed)
 
     term.setCursorPos(sx + nPos - nScroll, cy)
 
-    if changed ~= nil then changed(sLine) end
+    if fnChanged ~= nil then fnChanged(sLine) end
   end
 
   local function clear()
@@ -332,4 +321,57 @@ return function(_fnComplete, _sDefault, changed)
   print()
 
   return sLine
+end
+
+return function(options)
+  local x, y = gets(options, "x", "number"), gets(options, "y", "number")
+  local width = gets(options, "width", "number")
+
+  local fg, bg = gets(options, "fg", "number"), gets(options, "bg", "number")
+  local complete_fg = getso(options, "complete_fg", "number") or colours.lightGrey
+
+  local complete = getso(options, "complete", "function")
+  local default = getso(options, "default", "string")
+  local changed = getso(options, "changed", "function")
+
+  local read_coroutine, read_window
+
+  local original = term.current()
+  local original_copy = {}
+  for k, v in pairs(original) do original_copy[k] = v end
+  original_copy.setPaletteColour = function() end
+  original_copy.setPaletteColor = original_copy.setPaletteColour
+
+  return {
+    attach = function()
+      read_window = window.create(original_copy, x, y, width, 1, true)
+      read_window.setTextColor(fg)
+      read_window.setBackgroundColor(bg)
+      read_window.clear()
+
+      read_coroutine = coroutine.create(read)
+      local ok, err = coroutine.resume(read_coroutine, read_window, complete, default, changed, complete_fg)
+      if not ok then error(err, 0) end
+    end,
+
+    detach = function()
+      term.setCursorBlink(false)
+    end,
+
+    draw = function() read_window.redraw() end,
+
+    restore = function() read_window.restoreCursor() end,
+
+    update = function(event)
+      if not read_coroutine then return false end
+
+      local ok, err = coroutine.resume(read_coroutine, table.unpack(event, 1, event.n))
+      if not ok then error(err, 0) end
+
+      if coroutine.status(read_coroutine) == "dead" then
+        read_coroutine = nil
+        return false
+      end
+    end,
+  }
 end
