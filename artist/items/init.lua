@@ -225,7 +225,7 @@ function Items:insert(from, entry, item)
       local slot = slots[i]
 
       if slot.hash == hash and slot.count < maxCount then
-        local inserted = from.pushItems(name, item.slot, remaining, i)
+        local inserted = remote.pullItems(from, item.slot, remaining, i)
 
         update_count(entry, slot, name, inserted)
         remaining = remaining - inserted
@@ -248,7 +248,7 @@ function Items:insert(from, entry, item)
         local slot = slots[i]
 
         if slot.count == 0 then
-          local inserted = from.pushItems(name, item.slot, remaining, i)
+          local inserted = remote.pullItems(from, item.slot, remaining, i)
 
           update_count(entry, slot, name, inserted)
           remaining = remaining - inserted
@@ -271,7 +271,7 @@ function Items:insert(from, entry, item)
         local slot = slots[i]
 
         if slot.count == 0 then
-          local inserted = from.pushItems(name, item.slot, remaining, i)
+          local inserted = remote.pullItems(from, item.slot, remaining, i)
 
           update_count(entry, slot, name, inserted)
           remaining = remaining - inserted

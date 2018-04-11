@@ -16,23 +16,24 @@ return function(context)
 
   -- Blacklist all dropoff inventories and extract their peripheral
   for i = 1, #dropoffs do
-    inventories:add_blacklist(dropoffs[i])
+    local dropoff = dropoffs[i]
+    inventories:add_blacklist(dropoff)
 
-    local wrapped = wrap(dropoffs[i])
-    if wrapped then table.insert(dropoff_chests, wrapped) end
+    local wrapped = wrap(dropoff)
+    if wrapped then dropoff_chests[dropoff] = wrapped end
   end
 
   mediator:subscribe( { "task", "item_dropoff" }, function(data)
-    for _, dropoff in pairs(dropoff_chests) do
+    for dropoff_name, dropoff_remote in pairs(dropoff_chests) do
       -- We perform multiple passes to ensure we get everything when
       -- people are spamming items
       while true do
         local count = 0
-        for slot, item in pairs(dropoff.list()) do
+        for slot, item in pairs(dropoff_remote.list()) do
           count = count + 1
           item.slot = slot
-          local entry = items:get_item(Items.hash_item(item), dropoff, slot)
-          items:insert(dropoff, entry, item)
+          local entry = items:get_item(Items.hash_item(item), dropoff_remote, slot)
+          items:insert(dropoff_name, entry, item)
         end
 
         if count == 0 then break end
