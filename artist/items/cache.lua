@@ -7,6 +7,7 @@ return function(context)
   local inventories = context:get_class "artist.items.inventories"
 
   local cache = context:get_config("cache_items", true)
+  local cache_inventory = context:get_config("cache_inventory", false)
 
   -- When items have changed, reload the cache
   mediator:subscribe( { "items", "change" }, function()
@@ -14,14 +15,25 @@ return function(context)
 
     local entries, inventories = {}, {}
 
+    -- Item caching is designed to avoid calls to .getItemMeta
     for hash, entry in pairs(items.item_cache) do
       if entry.count > 0 then
-        entries[hash] = entry
+        entries[hash] = {
+          hash = entry.hash, meta = entry.meta,
+          count = entry.count, sources = entry.sources,
+        }
       end
     end
 
-    for name, inv in pairs(items.inventories) do
-      inventories[name] = inv.slots
+    -- Inventory caching is designed to avoid calls to .list. It provides
+    -- a little bit of a load boost, but is more buggy
+    if cache_inventory then
+      for name, inv in pairs(items.inventories) do
+        inventories[name] = inv.slots
+      end
+    else
+      -- If it's disabled, we reset the counts and sources of all items
+      for _, entry in pairs(entries) do entry.count = 0; entry.sources = {} end
     end
 
     serialise.serialise_to(".artist.cache", { items = entries, inventories = inventories })
@@ -44,18 +56,24 @@ return function(context)
         dirty[entry] = true
       end
 
-      for name, v in pairs(cached.inventories) do
-        assert(not items.inventories[name], "Already have peripheral " .. name)
+      -- See our note above on inventory caching
+      if cache_inventory and cached.inventories then
+        for name, v in pairs(cached.inventories) do
+          assert(not items.inventories[name], "Already have peripheral " .. name)
 
-        if peripheral.getType(name) == nil or inventories:blacklisted(name) then
-          items.inventories[name] = { slots = v }
-          items:unload_peripheral(name)
-        else
-          items.inventories[name] = {
-            slots = v,
-            remote = wrap(name),
-          }
+          if peripheral.getType(name) == nil or inventories:blacklisted(name) then
+            items.inventories[name] = { slots = v }
+            items:unload_peripheral(name)
+          else
+            items.inventories[name] = {
+              slots = v,
+              remote = wrap(name),
+            }
+          end
         end
+      else
+        -- If inventory caching is disabled, we need to clear all our loaded information
+        for _, entry in pairs(cached.items) do entry.count = 0; entry.sources = {} end
       end
 
       items:broadcast_change(dirty)

@@ -64,7 +64,6 @@ return function(context)
       for i = 1, 16 do
         local info = turtle.getItemDetail(i)
         if info and info.name == item.meta.name and info.damage == item.meta.damage then
-          log(("[TURTLE] Protect: %d %s"):format(i, info.name))
           protected_slots[i] = info
         end
       end
@@ -81,10 +80,11 @@ return function(context)
         local protect_item = protected_slots[i]
         local item = item_list[i]
         if item == nil then
-          if protect_item then log(("[TURTLE] Unprotect: %d %s"):format(i, protect_item.name)) end
+          -- If we've no item then unprotect this slot
           protected_slots[i] = false
         elseif not protect_item or item.name ~= protect_item.name or item.damage ~= protect_item.damage then
-          log(("[TURTLE] Extract: %d %s %s"):format(i, protect_item and protect_item.name or "?", item.name))
+          -- Otherwise if we're not protected or the protection isn't matching
+          -- then extract
           local entry = items:get_item(Items.hash_item(item), inventory, i)
           item.slot = i
           items:insert(this_turtle, entry, item)
