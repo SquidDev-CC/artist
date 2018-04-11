@@ -1,4 +1,4 @@
-local match = require "artist.gui.match"
+local match = require "artist.lib.match"
 local read = require "artist.gui.read"
 local dialogue = require "artist.gui.dialogue"
 
