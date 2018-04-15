@@ -56,7 +56,12 @@ function Context:add_thread(func)
 end
 
 function Context:run()
-  parallel.waitForAny(table.unpack(self.threads))
+  local ok, res = pcall(parallel.waitForAny, table.unpack(self.threads))
+  if not ok then
+    local current = term.current()
+    if current.endPrivateMode then term.endPrivateMode() end
+    error(res, 0)
+  end
 end
 
 return Context
