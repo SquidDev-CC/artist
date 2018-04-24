@@ -45,14 +45,14 @@ local inventory = introspection.getInventory()
 return function(context)
   local mediator = context:get_class "artist.lib.mediator"
   local items = context:get_class "artist.items"
-  local task_queue = context:get_class "artist.task_queue"
+  local peripherals = context:get_class "artist.lib.peripherals"
 
   local log = context:get_class "artist.lib.log"
 
   local protected_slots = {}
   local protect_all = false
 
-  mediator:subscribe( { "task", "turtle_pickup" }, function(data)
+  local function turtle_pickup(data)
     local item = items:get_item(data.hash)
     if item then
       protect_all = true
@@ -69,10 +69,10 @@ return function(context)
       end
       protect_all = false
     end
-  end)
+  end
 
   if inventory then
-    mediator:subscribe( { "task", "turtle_dropoff" }, function()
+    local function turtle_dropoff()
       if protect_all then return false end
 
       local item_list = inventory.list()
@@ -90,27 +90,28 @@ return function(context)
           items:insert(this_turtle, entry, item)
         end
       end
+    end
+
+    mediator:subscribe( { "event", "turtle_inventory" }, function()
+      peripherals:execute {
+        fn = turtle_dropoff,
+        priority = 10,
+        unique = true,
+        peripheral = true,
+      }
     end)
+
+    os.queueEvent("turtle_inventory")
   else
     printError("No introspection module, item pickup will not function")
     sleep(2)
   end
 
-  mediator:subscribe( { "event", "turtle_inventory" }, function()
-    task_queue:push {
-      id = "turtle_dropoff",
-      priority = 10,
-      persist = true,
-      unique = true,
-    }
-  end)
-
-  os.queueEvent("turtle_inventory")
-
   interface(context, function(hash, quantity)
-    task_queue:push {
-      id = "turtle_pickup",
+    peripherals:execute {
+      fn = turtle_pickup,
       priority = 30,
+      peripheral = true,
 
       hash  = hash,
       count = quantity,

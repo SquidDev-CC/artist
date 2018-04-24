@@ -1,12 +1,12 @@
 --- Registers various methods for interacting with peripherals
 
 local class = require "artist.lib.middleclass"
-local wrap = require "artist.items.wrap"
 
 local Inventories = class "artist.items.Inventories"
 function Inventories:initialize(context)
-  self.mediator = context:get_class("artist.lib.mediator")
-  self.items = context:get_class("artist.items")
+  local mediator = context:get_class("artist.lib.mediator")
+  local items = context:get_class("artist.items")
+  local peripherals = context:get_class("artist.lib.peripherals")
 
   self.inventory_rescan = context:get_config("inventory_rescan", 30)
   self.blacklist = context:get_config("inventory_blacklist", {})
@@ -30,44 +30,43 @@ function Inventories:initialize(context)
       end
     end
 
-  self.mediator:subscribe({ "event", "peripheral" }, function(name)
+  mediator:subscribe({ "event", "peripheral" }, function(name)
     if self:blacklisted(name) then return end
 
-    local remote = wrap(name)
+    local remote = peripherals:wrap(name)
     if remote and remote.list and remote.getItemMeta then
-      self.items:load_peripheral(name, remote)
+      peripherals:execute {
+        fn = function() items:load_peripheral(name, remote) end,
+        peripheral = name,
+      }
     end
   end)
 
-  self.mediator:subscribe({ "event", "peripheral_detach" }, function(name)
-    self.items:unload_peripheral(name)
+  mediator:subscribe({ "event", "peripheral_detach" }, function(name)
+    items:unload_peripheral(name)
   end)
 
-  self.mediator:subscribe( { "task", "add_inventories" }, function()
+  local function add_inventories(task)
     -- Load all peripherals
     local queue = {}
-    local peripherals = peripheral.getNames()
-    for i = 1, #peripherals do
-      local name = peripherals[i]
+    local peripheral_names = peripheral.getNames()
+    for i = 1, #peripheral_names do
+      local name = peripheral_names[i]
       if not self:blacklisted(name) then
-        local remote = wrap(name)
+        local remote = peripherals:wrap(name)
         if remote and remote.list and remote.getItemMeta then
-          queue[#queue + 1] = function()
-            self.items:load_peripheral(name, remote)
-          end
+          queue[#queue + 1] = function() items:load_peripheral(name, remote) end
         end
       end
     end
 
-    if #queue > 0 then
-      parallel.waitForAll(unpack(queue))
-    end
-  end)
+    if #queue > 0 then parallel.waitForAll(unpack(queue)) end
+  end
 
   --- Add a thread which periodically rescans all peripherals
   context:add_thread(function()
     local name = nil
-    local inventories = self.items.inventories
+    local inventories = items.inventories
     while true do
       sleep(self.inventory_rescan)
 
@@ -83,16 +82,23 @@ function Inventories:initialize(context)
       end
 
       if name ~= nil then
-        self.items:load_peripheral(name, inventories[name].remote)
+        peripherals:execute {
+          fn = function()
+            if inventories[name] then
+              items:load_peripheral(name, inventories[name].remote)
+            end
+          end,
+          peripheral = name,
+        }
       end
     end
   end)
 
-  context:get_class("artist.task_queue"):push({
-    id = "add_inventories",
-    persist = false,
+  peripherals:execute {
+    fn = add_inventories,
     priority = 100,
-  })
+    peripheral = true,
+  }
 end
 
 function Inventories:add_blacklist(name)

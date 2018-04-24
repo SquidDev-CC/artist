@@ -1,10 +1,10 @@
 local serialise = require "artist.lib.serialise"
-local wrap = require "artist.items.wrap"
 
 return function(context)
   local mediator = context:get_class "artist.lib.mediator"
   local items = context:get_class "artist.items"
   local inventories = context:get_class "artist.items.inventories"
+  local peripherals = context:get_class "artist.lib.peripherals"
 
   local cache = context:get_config("cache_items", true)
   local cache_inventory = context:get_config("cache_inventory", false)
@@ -41,7 +41,7 @@ return function(context)
 
     -- Push a super-high priority cache loader task. This ensures we run after
   -- loading has finished but before we start syncing peripherals.
-  mediator:subscribe( { "task", "load_cache" }, function()
+  local function load_cache()
     if not cache then return end
 
     local cached = serialise.deserialise_from(".artist.cache")
@@ -67,7 +67,7 @@ return function(context)
           else
             items.inventories[name] = {
               slots = v,
-              remote = wrap(name),
+              remote = peripherals:wrap(name),
             }
           end
         end
@@ -78,11 +78,11 @@ return function(context)
 
       items:broadcast_change(dirty)
     end
-  end)
+  end
 
-  context:get_class("artist.task_queue"):push({
-    id = "load_cache",
-    persist = false,
+  peripherals:execute {
+    fn = load_cache,
     priority = 1e6,
-  })
+    peripheral = true,
+  }
 end
