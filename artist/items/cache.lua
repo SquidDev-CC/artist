@@ -61,7 +61,7 @@ return function(context)
         for name, v in pairs(cached.inventories) do
           assert(not items.inventories[name], "Already have peripheral " .. name)
 
-          if peripheral.getType(name) == nil or inventories:blacklisted(name) then
+          if peripheral.getType(name) == nil or not inventories:enabled(name) then
             items.inventories[name] = { slots = v }
             items:unload_peripheral(name)
           else

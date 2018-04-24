@@ -1,4 +1,4 @@
---- Registers various methods for interacting with peripherals
+--- Registers various methods for interacting with inventory peripherals
 
 local class = require "artist.lib.middleclass"
 
@@ -31,7 +31,7 @@ function Inventories:initialize(context)
     end
 
   mediator:subscribe({ "event", "peripheral" }, function(name)
-    if self:blacklisted(name) then return end
+    if not self:enabled(name) then return end
 
     local remote = peripherals:wrap(name)
     if remote and remote.list and remote.getItemMeta then
@@ -52,7 +52,7 @@ function Inventories:initialize(context)
     local peripheral_names = peripheral.getNames()
     for i = 1, #peripheral_names do
       local name = peripheral_names[i]
-      if not self:blacklisted(name) then
+      if self:enabled(name) then
         local remote = peripherals:wrap(name)
         if remote and remote.list and remote.getItemMeta then
           queue[#queue + 1] = function() items:load_peripheral(name, remote) end
@@ -106,8 +106,8 @@ function Inventories:add_blacklist(name)
   self.blacklist[name] = true
 end
 
-function Inventories:blacklisted(name)
-  return self.blacklist[name] ~= nil or self.blacklist_types[peripheral.getType(name)] ~= nil
+function Inventories:enabled(name)
+  return self.blacklist[name] == nil and self.blacklist_types[peripheral.getType(name)] == nil
 end
 
 return Inventories
