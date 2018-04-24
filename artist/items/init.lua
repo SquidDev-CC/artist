@@ -88,7 +88,7 @@ function Items:load_peripheral(name, remote)
 
   local exisiting = self.inventories[name]
   if not remote then
-    remote = self.inventories[name].remote
+    remote = exisiting.remote
   elseif exisiting then
     exisiting.remote = remote
   else

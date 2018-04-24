@@ -1,6 +1,7 @@
 --- Registers various methods for interacting with inventory peripherals
 
 local class = require "artist.lib.middleclass"
+local tbl = require "artist.lib.tbl"
 
 local Inventories = class "artist.items.Inventories"
 function Inventories:initialize(context)
@@ -8,27 +9,9 @@ function Inventories:initialize(context)
   local items = context:get_class("artist.items")
   local peripherals = context:get_class("artist.lib.peripherals")
 
-  self.inventory_rescan = context:get_config("inventory_rescan", 30)
-  self.blacklist = context:get_config("inventory_blacklist", {})
-  self.blacklist_types = context:get_config("peripheral_blacklist", { "turtle", "minecraft:furnace" })
-
-  -- Convert list into lookup
-  for i = 1, #self.blacklist do
-    local name = self.blacklist[i]
-    if name ~= nil then
-      self.blacklist[name] = true
-      self.blacklist[i] = nil
-    end
-  end
-
-    -- Convert list into lookup
-    for i = 1, #self.blacklist_types do
-      local name = self.blacklist_types[i]
-      if name ~= nil then
-        self.blacklist_types[name] = true
-        self.blacklist_types[i] = nil
-      end
-    end
+  local inventory_rescan = context:get_config("inventory_rescan", 10)
+  self.blacklist = tbl.lookup(context:get_config("inventory_blacklist", {}))
+  self.blacklist_types = tbl.lookup(context:get_config("peripheral_blacklist", { "turtle", "minecraft:furnace" }))
 
   mediator:subscribe({ "event", "peripheral" }, function(name)
     if not self:enabled(name) then return end
@@ -63,32 +46,35 @@ function Inventories:initialize(context)
     if #queue > 0 then parallel.waitForAll(unpack(queue)) end
   end
 
+  local function check_inventory(data)
+    local name = data.name
+    local inventory = items.inventories[name]
+    if not inventory then return end
+
+    items:load_peripheral(name, inventory.remote)
+  end
+
   --- Add a thread which periodically rescans all peripherals
   context:add_thread(function()
     local name = nil
-    local inventories = items.inventories
     while true do
-      sleep(self.inventory_rescan)
+      sleep(inventory_rescan)
 
-      if inventories[name] then
-        name = next(inventories, name)
+      if items.inventories[name] then
+        name = next(items.inventories, name)
       else
         name = nil
       end
 
       if name == nil then
         -- Attempt to wrap around to the start.
-        name = next(inventories, nil)
+        name = next(items.inventories, nil)
       end
 
       if name ~= nil then
         peripherals:execute {
-          fn = function()
-            if inventories[name] then
-              items:load_peripheral(name, inventories[name].remote)
-            end
-          end,
-          peripheral = name,
+          fn = check_inventory,
+          name = name, peripheral = name,
         }
       end
     end
@@ -104,6 +90,11 @@ end
 function Inventories:add_blacklist(name)
   if type(name) ~= "string" then error("bad argument #1, expected string", 2) end
   self.blacklist[name] = true
+end
+
+function Inventories:add_blacklist_type(name)
+  if type(name) ~= "string" then error("bad argument #1, expected string", 2) end
+  self.blacklist_types[name] = true
 end
 
 function Inventories:enabled(name)

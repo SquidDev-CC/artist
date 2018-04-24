@@ -25,6 +25,7 @@ local Peripherals = class "artist.lib.Peripherals"
 function Peripherals:initialize(context)
   local mediator = context:get_class("artist.lib.mediator")
   local log = context:get_class("artist.lib.log")
+  self.log = log
 
   self.costs = context:get_config("method_costs", method_costs)
 
@@ -38,8 +39,10 @@ function Peripherals:initialize(context)
     while true do
       if cur_task then
         log("[TASK] Executing " .. func_info(cur_task.fn) .. " on " .. tostring(cur_task.peripheral))
+
+        local clock = os.clock()
         cur_task:fn()
-        log("[TASK] Finished executing")
+        log(("[TASK] Finished executing in %.2fs"):format((os.clock() - clock)))
 
         cur_task, cur_filter = nil, nil
       else
@@ -94,12 +97,15 @@ function Peripherals:wrap(name)
 
   local last_time = 0
 
-  local out = {}
+  local out = { _name = name }
   for method, func in pairs(wrapped) do
     local cost_delay = (self.costs[method] or self.costs._default) * 0.005
 
     out[method] = function(...)
-      if not self:is_enabled(name) then error("peripheral " .. name .. " is not enabled", 2) end
+      if not self:is_enabled(name) then
+        self.log(("[TASK] Peripheral %s (%s is currently enabled)"):format(name, self._active_filter))
+        error("peripheral " .. name .. " is not enabled", 2)
+      end
       -- Compute the delay needed for us to "regenerate" to the maximum
       -- energy level, sleeping for that time.
       local time = os.clock()

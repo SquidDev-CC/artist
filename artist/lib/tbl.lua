@@ -16,4 +16,10 @@ local function getso(tbl, name, ty)
   end
 end
 
-return { gets = gets, getso = getso }
+local function lookup(tbl)
+  local out = {}
+  for _, name in ipairs(tbl) do out[name] = true end
+  return out
+end
+
+return { gets = gets, getso = getso, lookup = lookup }
