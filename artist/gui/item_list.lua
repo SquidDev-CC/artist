@@ -85,8 +85,10 @@ return function(options)
   end
 
   local function update_scroll(new_scroll)
-    if new_scroll < 0 then new_scroll = 0 end
+    -- If there is less than a screen's worth of items, #display_items - height is negative,
+    -- thus the < 0 check _afterwards_
     if new_scroll > #display_items - height + 1 then new_scroll = #display_items - height + 1 end
+    if new_scroll < 0 then new_scroll = 0 end
 
     if new_scroll == scroll then return end
     scroll = new_scroll
@@ -146,11 +148,13 @@ return function(options)
         }
       end
 
-      -- TODO: Improve the handling of this. Ideally we can track our
-      -- current position and new position
-      index, scroll = 1, 0
-
       display_items = build_list(items, filter)
+
+      -- Update the index and scroll position. This will perform all the bounds
+      -- checks and so mark as dirty if needed.
+      update_index(index)
+      update_scroll(scroll)
+
       if dirty then dirty() end
     end,
 
@@ -160,11 +164,12 @@ return function(options)
       if filter ~= new_filter then
         filter = new_filter
 
-        -- TODO: Improve the handling of this. Ideally we can track our
-      -- current position and new position
+        display_items = build_list(items, filter)
+
+        -- While it would be possible to do something more fancy with chosing
+        -- what item to use, I've found it doesn't yield that nice results.
         index, scroll = 1, 0
 
-        display_items = build_list(items, filter)
         if dirty then dirty() end
       end
     end,

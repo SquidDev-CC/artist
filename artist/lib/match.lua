@@ -43,7 +43,7 @@ local function match_simple(str, ptrn)
         ptrn_pos = ptrn_pos + 1
       else
         -- If we don't match a letter then minus points
-        score = score - unmatched_letter_penalty
+        score = score + unmatched_letter_penalty
 
         previous_match = false
       end

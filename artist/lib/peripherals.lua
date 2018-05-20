@@ -116,7 +116,12 @@ function Peripherals:wrap(name)
       end
       last_time = time
 
-      return func(...)
+      local res = table.pack(pcall(func, ...))
+      if res[1] then
+        return table.unpack(res, 2, res.n)
+      else
+        error(("%s (for %s.%s)"):format(res[2], name, method))
+      end
     end
   end
 
