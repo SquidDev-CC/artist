@@ -59,12 +59,15 @@ return function(options)
   local height = gets(options, "height", "number")
 
   local selected = gets(options, "selected", "function")
+  local annotate = gets(options, "annotate", "function")
 
   local items = {}
   local display_items = {}
 
   local filter = ""
   local index, scroll = 1, 0
+
+  local peeking = false
 
   local dirty = nil
 
@@ -134,18 +137,60 @@ return function(options)
           ))
         end
       end
+
+      -- We display a little popup window describing an item when shift is being held
+      if peeking then
+        local item = display_items[index]
+        if item and #item.annotations > 0 then
+          local annotations = item.annotations
+
+          -- Compute the width of our window
+          local maxk, maxv = 0, 0
+          for i = 1, #annotations do
+            maxk = math.max(maxk, #annotations[i].key)
+            maxv = math.max(maxv, #annotations[i].value)
+          end
+
+          -- Compute the X position of this window
+          local x, max = 1, maxk + maxv + 4
+          if max < width then
+            x = math.floor((width - max) / 2) + 1
+            -- if x * 2 + max ~= width then maxv = maxv + 1 end
+          end
+
+          -- Setup our context for rendering
+          local format = (" %" .. maxk .. "s: %-" .. maxv .. "s ")
+          term.setBackgroundColor(colours.cyan)
+
+          -- Write some padding beforehand
+          term.setCursorPos(x, y + height - #annotations - 1)
+          term.write((" "):rep(max))
+
+          for i = 1, #annotations do
+            term.setCursorPos(x, y + height - #annotations + i - 1)
+            term.write(format:format(annotations[i].key, annotations[i].value))
+          end
+        end
+      end
     end,
 
     --- Change a subset of the specified items
     update_items = function(change)
       for item in pairs(change) do
-        items[item.hash] = {
-          hash        = item.hash,
-          name        = item.meta.name,
-          damage      = item.meta.damage,
-          count       = item.count,
-          displayName = item.meta.displayName,
-        }
+        local existing = items[item.hash]
+        if not existing then
+          existing = {
+            hash        = item.hash,
+            name        = item.meta.name,
+            damage      = item.meta.damage,
+            displayName = item.meta.displayName,
+            annotations = annotate(item.meta),
+          }
+
+          items[item.hash] = existing
+        end
+
+        existing.count = item.count
       end
 
       display_items = build_list(items, filter)
@@ -182,7 +227,6 @@ return function(options)
           if item then selected(item) end
         end
       elseif event[1] == "mouse_scroll" then
-        -- TODO: Update this
         update_scroll(scroll + event[2])
       elseif event[1] == "key" then
         if event[2] == keys.down then
@@ -196,6 +240,14 @@ return function(options)
         elseif event[2] == keys.enter then
           local item = display_items[index]
           if item then selected(item) end
+        elseif event[2] == keys.leftShift then
+          peeking = true
+          if dirty then dirty() end
+        end
+      elseif event[1] == "key_up" then
+        if event[2] == keys.leftShift then
+          peeking = false
+          if dirty then dirty() end
         end
       end
     end,

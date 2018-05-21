@@ -7,6 +7,7 @@ context:get_class "artist.items.dropoff"
 context:get_class "artist.items.extract"
 context:get_class "artist.items.furnaces"
 context:get_class "artist.items.inventories"
+context:get_class "artist.items.annotation"
 
 if turtle then
   context:get_class "artist.turtle"

@@ -78,6 +78,12 @@ return function(context, extract_items)
       attach(dialogue_quantity, 2)
       active_control = dialogue_quantity
     end,
+
+    annotate = function(meta)
+      local annotations = {}
+      mediator:publish({ "items", "annotate" }, meta, annotations)
+      return annotations
+    end,
   }
 
   local item_filter = read {
