@@ -240,12 +240,12 @@ return function(options)
         elseif event[2] == keys.enter then
           local item = display_items[index]
           if item then selected(item) end
-        elseif event[2] == keys.leftShift then
+        elseif event[2] == keys.tab then
           peeking = true
           if dirty then dirty() end
         end
       elseif event[1] == "key_up" then
-        if event[2] == keys.leftShift then
+        if event[2] == keys.tab then
           peeking = false
           if dirty then dirty() end
         end

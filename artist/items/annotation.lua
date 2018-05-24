@@ -28,7 +28,7 @@ return function(context)
       end
     end
 
-    if meta.media then
+    if meta.media and meta.media.label then
       table.insert(annotations, { key = "Label", value = meta.media.label })
     end
 

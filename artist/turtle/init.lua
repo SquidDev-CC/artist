@@ -2,42 +2,7 @@ local interface = require "artist.gui.interface"
 
 local Items = require "artist.items"
 
-local peripherals = peripheral.getNames()
-local this_turtle = nil
-
-for i = 1, #peripherals do
-  local name = peripherals[i]
-  if peripheral.getType(name) == "turtle" and peripheral.call(name, "getID") == os.getComputerID() then
-      this_turtle = name
-      break
-  end
-end
-
-if this_turtle == nil then
-  local turtle_peripherals, turtle_targets = {}, {}
-  for i = 1, #peripherals do
-    local name = peripherals[i]
-    local wrapped = peripheral.wrap(name)
-    if peripheral.getType(name) == "turtle" then
-      -- If it's a turtle, track it as a peripheral
-      turtle_peripherals[name] = true
-    elseif wrapped.getTransferLocations then
-      for _, location in ipairs(wrapped.getTransferLocations()) do
-        -- If it's a turtle, then add it as a location
-        if location:find("^turtle_") then turtle_targets[location] = true end
-      end
-    end
-  end
-
-  for k, _ in pairs(turtle_peripherals) do turtle_targets[k] = nil end
-
-  this_turtle = next(turtle_targets)
-  if not this_turtle then
-    error("Cannot find turtle name: none on the network", 0)
-  elseif next(turtle_targets, this_turtle) then
-    error("Cannot find turtle name: ambigious reference", 0)
-  end
-end
+local this_turtle = require "artist.turtle.me"
 
 local introspection = peripheral.find "plethora:introspection"
 local inventory = introspection.getInventory()
