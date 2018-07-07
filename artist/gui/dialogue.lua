@@ -37,11 +37,12 @@ local function draw_border(term, back, border, x, y, width, height)
 end
 
 local diag_colours = {
-  white     = colours.cyan,
+  cyan      = colours.cyan,
+  green     = colours.green,
   grey      = colours.purple,
   lightGrey = colours.blue,
   red       = colours.brown,
-  green     = colours.green,
+  white     = colours.yellow,
 }
 
 local tracking_colours = {}
