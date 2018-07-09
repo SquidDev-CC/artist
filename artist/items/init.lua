@@ -49,19 +49,14 @@ function Items:get_item(hash, remote, slot)
   if not entry then
     if not remote then return nil end
 
-    -- Create the item entry straight away, with some guff metadata
-    -- This prevents race conditions where multiple chests request metadata
-    -- within a tick.
     entry = {
       hash    = hash,
       count   = 0,
-      meta    = { displayName = hash },
+      meta    = remote.getItemMeta(slot),
       sources = {},
     }
 
     self.item_cache[hash] = entry
-
-    entry.meta = remote.getItemMeta(slot)
   end
 
   return entry
