@@ -184,6 +184,8 @@ function Items:extract(to, entry, count, toSlot)
   local hash = entry.hash
 
   for name in pairs(entry.sources) do
+    if remaining <= 0 then break end
+
     local inventory = self.inventories[name]
     local remote = inventory.remote
     local slots = inventory.slots
@@ -200,8 +202,6 @@ function Items:extract(to, entry, count, toSlot)
         if remaining <= 0 then break end
       end
     end
-
-    if remaining <= 0 then break end
   end
 
   if remaining ~= count then
@@ -217,6 +217,8 @@ function Items:insert(from, entry, item)
   local maxCount = entry.meta.maxCount
 
   for name in pairs(entry.sources) do
+    if remaining <= 0 then break end
+
     local inventory = self.inventories[name]
     local remote = inventory.remote
     local slots = inventory.slots
@@ -233,8 +235,6 @@ function Items:insert(from, entry, item)
         if remaining <= 0 then break end
       end
     end
-
-    if remaining <= 0 then break end
   end
 
   if remaining > 0 then

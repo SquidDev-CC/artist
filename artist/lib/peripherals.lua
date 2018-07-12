@@ -38,7 +38,16 @@ function Peripherals:initialize(context)
   local main_thread = coroutine.create(function()
     while true do
       if cur_task then
-        log("[TASK] Executing " .. func_info(cur_task.fn) .. " on " .. tostring(cur_task.peripheral))
+        local filter = cur_task.peripheral
+        if filter == true then filter = "all peripherals"
+        elseif filter == false then filter = "no peripheral"
+        elseif type(filter) == "table" then
+          filter = {}
+          for k in pairs(cur_task.peripheral) do filter[#filter + 1] = k end
+          filter = table.concat(filter, " ")
+        end
+
+        log("[TASK] Executing " .. func_info(cur_task.fn) .. " on " .. filter)
 
         local clock = os.clock()
         cur_task:fn()

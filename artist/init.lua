@@ -1,5 +1,7 @@
 local context = require "artist.lib.context"()
 
+local log = context:get_class "artist.lib.log"
+
 context:get_class "artist.items"
 
 context:get_class "artist.items.cache"
@@ -17,4 +19,8 @@ end
 
 context:save()
 
-context:run()
+local ok, err = pcall(context.run, context)
+if not ok then
+  log("[ERROR] " .. tostring(err))
+  error(err, 0)
+end
