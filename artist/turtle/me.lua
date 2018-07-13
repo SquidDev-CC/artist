@@ -2,13 +2,18 @@
 
 local peripherals = peripheral.getNames()
 
--- First try to find us as a peripheral. It shouldn't work, but worth a punt
-for i = 1, #peripherals do
-  local name = peripherals[i]
-  if peripheral.getType(name) == "turtle" and peripheral.call(name, "getID") == os.getComputerID() then
-      return name
+-- Try to use CC:T's getNameLocal
+local this_turtle
+for _, side in ipairs(redstone.getSides()) do
+  if peripheral.getType(side) == "modem" then
+    local wrapped = peripheral.wrap(side)
+    local name = wrapped.getNameLocal and wrapped.getNameLocal()
+    if this_turtle then error("Cannot find turtle name: multiple modems", 0) end
+    this_turtle = name
   end
 end
+
+if this_turtle then return this_turtle end
 
 --- Now try to find a turtle which exists remotely but not locally.
 local turtle_peripherals, turtle_targets = {}, {}
@@ -34,7 +39,7 @@ parallel.waitForAll(table.unpack(queue))
 
 for k, _ in pairs(turtle_peripherals) do turtle_targets[k] = nil end
 
-local this_turtle = next(turtle_targets)
+this_turtle = next(turtle_targets)
 if not this_turtle then
   error("Cannot find turtle name: none on the network", 0)
 elseif next(turtle_targets, this_turtle) then
