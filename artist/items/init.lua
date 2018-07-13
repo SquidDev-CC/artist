@@ -46,19 +46,19 @@ end
 --- Lookup the item entry
 function Items:get_item(hash, remote, slot)
   local entry = self.item_cache[hash]
-  if not entry then
-    if not remote then return nil end
+  if entry then return entry end
+  if not remote then return nil end
 
-    entry = {
-      hash    = hash,
-      count   = 0,
-      meta    = remote.getItemMeta(slot),
-      sources = {},
-    }
+  self.log(("[ITEMS] Cache miss for %s - fetching metadata"):format(hash))
+  local meta = remote.getItemMeta(slot)
 
-    self.item_cache[hash] = entry
-  end
+  -- We fetch the entry again just in case it was fetched between us
+  -- starting and ending the request
+  entry = self.item_cache[hash]
+  if entry then return entry end
 
+  entry = { hash = hash, count = 0, meta = meta, sources = {}, }
+  self.item_cache[hash] = entry
   return entry
 end
 
@@ -84,7 +84,7 @@ end
 
 --- Load a peripheral into the system, or update an existing one.
 function Items:load_peripheral(name, remote)
-  local start = os.clock()
+  local start = os.epoch("utc")
 
   local exisiting = self.inventories[name]
   if not remote then
@@ -148,7 +148,8 @@ function Items:load_peripheral(name, remote)
     end
   end
 
-  self.log(("[ITEMS] Scanned inventory %s in %.2f seconds"):format(name, os.clock() - start))
+  local finish = os.epoch("utc")
+  self.log(("[ITEMS] Scanned inventory %s in %.2f seconds"):format(name, (finish - start) * 1e-3))
   self:broadcast_change(dirty)
 end
 
