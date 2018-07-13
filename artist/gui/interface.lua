@@ -8,10 +8,9 @@ return function(context, extract_items)
   local width, height = term.getSize()
 
   -- Our local cache of items
-  local items = {}
-
   local redraw_layer = false
   local elements = {}
+  local active_control = nil
 
   local function sort_layer(a, b) return a.layer < b.layer end
   local function set_layer(layer)
@@ -58,7 +57,7 @@ return function(context, extract_items)
   local dialogue_quantity = nil
 
   -- The item list handles filtering and rendering of available items
-  local item_list = item_list {
+  local items = item_list {
     y = 2,
     height = height - 1,
     selected = function(item)
@@ -89,15 +88,15 @@ return function(context, extract_items)
   local item_filter = read {
     x = 1, y = 1, width = width,
     fg = colours.black, bg = colours.white,
-    changed = item_list.update_filter,
+    changed = items.update_filter,
   }
 
   -- When we receive an item difference we update the item list. Tthis shedules
   -- a redraw if required.
-  mediator:subscribe( { "items", "change" }, item_list.update_items)
+  mediator:subscribe( { "items", "change" }, items.update_items)
 
   context:add_thread(function()
-    attach(item_list, 1)
+    attach(items, 1)
     attach(item_filter, 1)
     active_control = item_filter
 
@@ -117,7 +116,7 @@ return function(context, extract_items)
           active_control = item_filter
         end
       else
-        item_list.update(ev)
+        items.update(ev)
 
         local ok = item_filter.update(ev)
         if ok == false then break end
@@ -137,7 +136,7 @@ return function(context, extract_items)
       end
     end
 
-    detach(item_list)
+    detach(items)
     detach(item_filter)
 
     term.setCursorPos(1, 1)

@@ -30,7 +30,6 @@ local function serialiseImpl(t, tracking, out)
     for k,v in pairs(t) do
       if not seen[k] then
         if first then first = false else out[#out + 1] = "," end
-        local entry
         if type(k) == "string" and not luaKeywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
           out[#out + 1] = k .. "="
           serialiseImpl(v, tracking, out)

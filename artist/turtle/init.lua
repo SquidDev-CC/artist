@@ -12,8 +12,6 @@ return function(context)
   local items = context:get_class "artist.items"
   local peripherals = context:get_class "artist.lib.peripherals"
 
-  local log = context:get_class "artist.lib.log"
-
   local protected_slots = {}
   local protect_all = false
 
@@ -22,7 +20,7 @@ return function(context)
     if item then
       protect_all = true
 
-      local count = items:extract(this_turtle, item, data.count)
+      items:extract(this_turtle, item, data.count)
 
       -- Scan all slots and attempt to determine which ones should be considered "protected"
       -- Namely, which ones shouldn't we pick up from.

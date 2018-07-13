@@ -75,7 +75,7 @@ local function read(term, fnComplete, sDefault, fnChanged, nCompleteFg)
       nScroll = nPos
     end
 
-    local cx,cy = term.getCursorPos()
+    local _, cy = term.getCursorPos()
     term.setCursorPos(sx, cy)
     if _bClear then
       term.write(string.rep(" ", math.max(#sLine - nScroll, 0)))
@@ -297,7 +297,7 @@ local function read(term, fnComplete, sDefault, fnChanged, nCompleteFg)
         updateModifier()
       end
     elseif sEvent == "mouse_click" or sEvent == "mouse_drag" and param == 1 then
-      local cx, cy = term.getCursorPos()
+      local _, cy = term.getCursorPos()
       if param2 == cy then
         -- We first clamp the x position with in the start and end points
         -- to ensure we don't scroll beyond the visible region.
@@ -315,7 +315,7 @@ local function read(term, fnComplete, sDefault, fnChanged, nCompleteFg)
     end
   end
 
-  local cx, cy = term.getCursorPos()
+  local _, cy = term.getCursorPos()
   term.setCursorBlink(false)
   term.setCursorPos(w + 1, cy)
   print()

@@ -124,7 +124,7 @@ local Mediator = setmetatable(
   Subscriber = Subscriber
 },
 {
-  __call = function (fn, options)
+  __call = function ()
     return {
       channel = Channel('root'),
 

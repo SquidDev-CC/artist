@@ -1,8 +1,5 @@
 local match = require "artist.lib.match"
-local gets, getso = require "artist.lib.tbl".gets, require "artist.lib.tbl".getso
-
-local read = require "artist.gui.read"
-local dialogue = require "artist.gui.dialogue"
+local gets = require "artist.lib.tbl".gets
 
 local function compare_count(a, b)
   if a.count == b.count then

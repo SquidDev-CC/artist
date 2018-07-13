@@ -29,7 +29,7 @@ function Inventories:initialize(context)
     items:unload_peripheral(name)
   end)
 
-  local function add_inventories(task)
+  local function add_inventories()
     -- Load all peripherals
     local queue = {}
     local peripheral_names = peripheral.getNames()

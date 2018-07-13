@@ -1,5 +1,5 @@
 local read = require "artist.gui.read"
-local gets, getso = require "artist.lib.tbl".gets, require "artist.lib.tbl".getso
+local gets = require "artist.lib.tbl".gets
 
 local function draw_border_cell(term, back, border, char, invert)
   if invert then
@@ -51,10 +51,6 @@ for k, v in pairs(diag_colours) do
 end
 
 return function(options)
-  local x, y = term.getCursorPos()
-  local back, fore = term.getBackgroundColor(), term.getTextColor()
-  local original = term.current()
-
   local dx, dy = gets(options, "x", "number"), gets(options, "y", "number")
   local dwidth, dheight = gets(options, "width", "number"), gets(options, "height", "number")
   local message = gets(options, "message", "string")

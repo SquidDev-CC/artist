@@ -1,8 +1,6 @@
 --- Gathers various bits of metadata about items in order to present them to
 -- the user.
 
-local class = require "artist.lib.middleclass"
-
 return function(context)
   local mediator = context:get_class("artist.lib.mediator")
 

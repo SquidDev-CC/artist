@@ -1,7 +1,6 @@
 --- Represents a system which shedules tasks for peripherals
 
 local class = require "artist.lib.middleclass"
-local serialise = require "artist.lib.serialise"
 
 local func_info = function(fn)
   if type(debug) == "table" and debug.getinfo then

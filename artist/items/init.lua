@@ -105,7 +105,6 @@ function Items:load_peripheral(name, remote)
 
   local dirty = {}
 
-  local remote = exisiting.remote
   local oldSlots = exisiting.slots
   local newSlots = remote.list()
 

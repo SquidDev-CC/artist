@@ -16,8 +16,9 @@ return function(context)
   -- the main coroutine.
   -- We use a medium priority level as this responds to user input
   mediator:subscribe( { "items", "extract" }, function(to, hash, count)
-    task_queue:execute {
+    peripherals:execute {
       fn = extract,
+      peripheral = true,
       priority = 30,
 
       to    = to,
