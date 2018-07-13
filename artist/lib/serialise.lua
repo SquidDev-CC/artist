@@ -10,6 +10,15 @@ local luaKeywords = {
   ["while"] = true,
 }
 
+local count = 0
+local function check_in()
+  count = count + 1
+  if count > 1e4 then
+    os.queueEvent("artist_check_in"); os.pullEvent("artist_check_in")
+    count = 0
+  end
+end
+
 local function serialiseImpl(t, tracking, out)
   local ty = type(t)
   if ty == "table" then
@@ -18,6 +27,7 @@ local function serialiseImpl(t, tracking, out)
     end
     tracking[t] = true
 
+    check_in()
     out[#out + 1] = "{"
 
     local seen = {}
