@@ -1,6 +1,6 @@
 --- Represents a system which shedules tasks for peripherals
 
-local class = require "artist.lib.middleclass"
+local class = require "artist.lib.class"
 
 local func_info = function(fn)
   if type(debug) == "table" and debug.getinfo then
@@ -21,7 +21,7 @@ local method_costs = {
 
 local Peripherals = class "artist.lib.Peripherals"
 
-function Peripherals:initialize(context)
+function Peripherals:initialise(context)
   local mediator = context:get_class("artist.lib.mediator")
   local log = context:get_class("artist.lib.log")
   self.log = log

@@ -1,6 +1,6 @@
 --- Handles configuration and dependency injection
 
-local class = require "artist.lib.middleclass"
+local class = require "artist.lib.class"
 
 local Context = class "artist.lib.context"
 
@@ -23,7 +23,7 @@ else
   end
 end
 
-function Context:initialize()
+function Context:initialise()
   self.classes = {}
   self.config = {}
   self.threads = {}

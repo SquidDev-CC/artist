@@ -9,7 +9,7 @@
 -- Items are "hashed" by a combination of their name, damage value and NBT hash.
 -- All items with the same hash are considered equivalent.
 
-local class = require "artist.lib.middleclass"
+local class = require "artist.lib.class"
 
 --- Calculate the hash of a particular item.
 local function hash_item(item)
@@ -21,7 +21,7 @@ end
 
 local Items = class "artist.Items"
 
-function Items:initialize(context)
+function Items:initialise(context)
   self.mediator = context:get_class("artist.lib.mediator")
   self.log = context:get_class("artist.lib.log")
 

@@ -1,12 +1,12 @@
 --- Registers various methods for interacting with furnace peripherals
 
-local class = require "artist.lib.middleclass"
+local class = require "artist.lib.class"
 local tbl = require "artist.lib.tbl"
 
 local Items = require "artist.items"
 
 local Furnaces = class "artist.items.Furnaces"
-function Furnaces:initialize(context)
+function Furnaces:initialise(context)
   local mediator = context:get_class("artist.lib.mediator")
   local items = context:get_class("artist.items")
   local peripherals = context:get_class("artist.lib.peripherals")
