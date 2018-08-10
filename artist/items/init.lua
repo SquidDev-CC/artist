@@ -92,8 +92,14 @@ function Items:load_peripheral(name, remote)
   elseif exisiting then
     exisiting.remote = remote
   else
+    local size = remote.size()
+
+    -- It's possible we return nil while importing. The other calls
+    -- shouldn't really error at all, so this is the main problem site.
+    if not size then return end
+
     local slots = {}
-    for i = 1, remote.size() do
+    for i = 1, size do
       slots[i] = { count = 0 }
     end
     exisiting = {
