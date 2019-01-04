@@ -5,13 +5,34 @@ return function(context)
   local mediator = context:get_class("artist.lib.mediator")
 
   mediator:subscribe({ "items", "annotate" }, function(meta, annotations)
-    table.insert(annotations, { key = "Id", value = meta.name })
+    -- We strip the mod ID/namespace from the block ID, and rank it slightly
+    -- higher.
+    table.insert(annotations, {
+      key = "Id path",
+      value = meta.name:gsub("^[^:]*", ""),
+      search_factor = 2.1, hidden=true
+    })
+
+    table.insert(annotations, { key = "Id", value = meta.name, search_factor = 2 })
+    table.insert(annotations, { key = "Display name", value = meta.displayName, search_factor = 2, hidden = true })
 
     -- Enchantments
     if meta.enchantments then
       for _, enchant in ipairs(meta.enchantments) do
         table.insert(annotations, { key = "Enchant", value = enchant.fullName })
       end
+    end
+
+    table.insert(annotations, { key = "Damage", value = ("%d"):format(meta.damage) })
+
+    if meta.maxDamage > 0 then
+      table.insert(annotations, {
+        key = "Durability",
+        value = ("%d/%d (%.2f%%)"):format(
+          meta.maxDamage - meta.damage, meta.maxDamage,
+          100 - (meta.damage / meta.maxDamage) * 100
+        )
+      })
     end
 
     if meta.effects then

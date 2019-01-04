@@ -34,9 +34,14 @@ local function build_list(items, filter)
     local scores = {}
     for _, item in pairs(items) do
       if item.count > 0 then
-        local score1 = match(item.name, filter)
-        local score2 = match(item.displayName, filter)
-        local score = math.max(score1, score2)
+        local score = 0
+        local annotations = item.annotations
+        for i = 1, #annotations do
+          local annotation = annotations[i]
+          local annotation_score = match(annotation.value, filter) * (annotation.search_factor or 1)
+          if annotation_score > score then score = annotation_score end
+        end
+
         if score > 0 then
           scores[item] = score
           result[n] = item
@@ -110,9 +115,9 @@ return function(options)
 
       local width = term.getSize()
 
-      local maxWidth = width - 17
-      local format = "%" .. maxWidth .. "s \149 %5s \149 %s"
-      term.write(format:format("Item", "Dmg", "Count"))
+      local maxWidth = width - 11
+      local format = "%" .. maxWidth .. "s \149 %s"
+      term.write(format:format("Item", "Count"))
 
       term.setTextColor(colours.white)
       for i = 1, height - 1 do
@@ -129,30 +134,31 @@ return function(options)
         if item then
           term.write(format:format(
             (item.craft and "\16 " or "  ") .. item.displayName:sub(1, maxWidth - 2),
-            item.damage,
             item.count
           ))
         end
       end
 
       -- We display a little popup window describing an item when shift is being held
-      if peeking then
-        local item = display_items[index]
-        if item and #item.annotations > 0 then
-          local annotations = item.annotations
+      if peeking and display_items[index] then
+        local annotations = display_items[index].annotations
 
-          -- Compute the width of our window
-          local maxk, maxv = 0, 0
-          for i = 1, #annotations do
-            maxk = math.max(maxk, #annotations[i].key)
-            maxv = math.max(maxv, #annotations[i].value)
+        -- Compute the width of our window
+        local maxk, maxv, count = 0, 0, 0
+        for i = 1, #annotations do
+          local annotation = annotations[i]
+          if not annotation.hidden then
+            count = count + 1
+            maxk = math.max(maxk, #annotation.key)
+            maxv = math.max(maxv, #annotation.value)
           end
+        end
 
+        if count > 0 then
           -- Compute the X position of this window
           local x, max = 1, maxk + maxv + 4
           if max < width then
             x = math.floor((width - max) / 2) + 1
-            -- if x * 2 + max ~= width then maxv = maxv + 1 end
           end
 
           -- Setup our context for rendering
@@ -160,12 +166,17 @@ return function(options)
           term.setBackgroundColor(colours.cyan)
 
           -- Write some padding beforehand
-          term.setCursorPos(x, y + height - #annotations - 1)
+          term.setCursorPos(x, y + height - count - 1)
           term.write((" "):rep(max))
 
+          local row = 1
           for i = 1, #annotations do
-            term.setCursorPos(x, y + height - #annotations + i - 1)
-            term.write(format:format(annotations[i].key, annotations[i].value))
+            local annotation = annotations[i]
+            if not annotation.hidden then
+              term.setCursorPos(x, y + height - count + row - 1)
+              term.write(format:format(annotation.key, annotation.value))
+              row = row + 1
+            end
           end
         end
       end
@@ -178,8 +189,6 @@ return function(options)
         if not existing then
           existing = {
             hash        = item.hash,
-            name        = item.meta.name,
-            damage      = item.meta.damage,
             displayName = item.meta.displayName,
             annotations = annotate(item.meta),
           }
