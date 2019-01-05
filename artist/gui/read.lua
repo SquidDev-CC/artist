@@ -193,7 +193,8 @@ local function read(term, fnComplete, sDefault, fnChanged, nCompleteFg)
           recomplete()
           redraw()
         end
-      elseif (nMod == 0 and (param == keys.up or param == keys.down)) or (nMod == 1 and (param == keys.p or param == keys.n)) then
+      elseif (nMod == 0 and (param == keys.up or param == keys.down))
+          or (nMod == 1 and (param == keys.p or param == keys.n)) then
         -- Up or down
         if nCompletion then
           -- Cycle completions

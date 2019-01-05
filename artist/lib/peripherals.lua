@@ -60,15 +60,13 @@ function Peripherals:initialise(context)
   end)
 
   context:add_thread(function()
-    local channels = mediator:getChannel({ "event" })
     while true do
       local event = table.pack(os.pullEvent())
 
       -- If needed, republish this event to mediator
-      local channel = channels.channels[event[1]]
-      if channel ~= nil then
+      if mediator:has_subscribers( { "event", event[1] }) then
         log("[TASK] Event " .. event[1])
-        channel:publish({}, table.unpack(event, 2, event.n))
+        mediator:publish({ "event", event[1] }, table.unpack(event, 2, event.n))
       end
 
       if cur_task == nil then
