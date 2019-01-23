@@ -1,19 +1,26 @@
+--- Caches all item metadata.
+--
+-- .getItemMeta can be rather expensive, so we cache it in order to provide
+-- more efficient loading.
+
 local serialise = require "artist.lib.serialise"
 
 return function(context)
-  local items = context:get_class "artist.items"
-  local log = context:get_class "artist.lib.log"
-  local mediator = context:get_class "artist.lib.mediator"
-  local peripherals = context:get_class "artist.lib.peripherals"
+  local items = context:require "artist.core.items"
+  local log = context:logger("Cache")
 
-  local cache = context:get_config("cache_items", true)
+  local config = context.config
+    :group("cache", "Cache item metadata to ensure faster startup speeds")
+    :define("enabled", "Whether the item cache is enabled", true)
+    :define("batch_time", "The minimum time to batch writes together", 5)
+    :get()
 
   local cached_items = {}
 
   -- When items have changed, reload the cache
   local changed_timer = nil
-  mediator:subscribe("items.change", function(dirty)
-    if not cache then return end
+  context.mediator:subscribe("items.change", function(dirty)
+    if not config.enabled then return end
 
     -- Update the cache, determining whether it has changed or not
     -- TODO: We need to improve our handling of the initial load - we'll always
@@ -32,19 +39,20 @@ return function(context)
     -- Schedule a save for 5 seconds time. This allows us to batch together multiple
     -- changes
     if changed and not changed_timer then
-      changed_timer = os.startTimer(5)
+      changed_timer = os.startTimer(config.batch_time)
     end
   end)
 
+  -- Waits for a cache timer to occur, and saves.
   context:add_thread(function()
     while true do
       while changed_timer do
         changed_timer = nil
 
         local start = os.epoch("utc")
-        serialise.serialise_to(".artist.cache", { items = cached_items })
+        serialise.serialise_to(".artist.d/cache", { items = cached_items })
         local finish = os.epoch("utc")
-        log(("[CACHE] Stored in %.2fs"):format((finish - start) * 1e-3))
+        log(("Stored in %.2fs"):format((finish - start) * 1e-3))
       end
 
       repeat
@@ -53,14 +61,14 @@ return function(context)
     end
   end)
 
-    -- Push a super-high priority cache loader task. This ensures we run after
+  -- Push a super-high priority cache loader task. This ensures we run after
   -- loading has finished but before we start syncing peripherals.
   local function load_cache()
-    if not cache then return end
+    if not config.enabled then return end
 
     local start = os.epoch("utc")
 
-    local cached = serialise.deserialise_from(".artist.cache")
+    local cached = serialise.deserialise_from(".artist.d/cache")
     if not cached then return end
 
     cached_items = cached.items
@@ -76,12 +84,12 @@ return function(context)
     end
 
     local finish = os.epoch("utc")
-    log(("[CACHE] Loaded in %.2fs"):format((finish - start) * 1e-3))
+    log(("Loaded in %.2fs"):format((finish - start) * 1e-3))
 
     items:broadcast_change(dirty)
   end
 
-  peripherals:execute {
+  context.peripherals:execute {
     fn = load_cache,
     priority = 1e6,
     peripheral = true,

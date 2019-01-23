@@ -1,26 +1,24 @@
-local context = require "artist.lib.context"()
+local context = require "artist.core.context"()
 
-local log = context:get_class "artist.lib.log"
+context:require "artist.core.items"
 
-context:get_class "artist.items"
-
-context:get_class "artist.items.cache"
-context:get_class "artist.items.dropoff"
-context:get_class "artist.items.extract"
-context:get_class "artist.items.furnaces"
-context:get_class "artist.items.inventories"
-context:get_class "artist.items.annotation"
+context:require "artist.items.cache"
+context:require "artist.items.dropoff"
+context:require "artist.items.extract"
+context:require "artist.items.furnaces"
+context:require "artist.items.inventories"
+context:require "artist.items.annotate"
 
 if turtle then
-  context:get_class "artist.turtle"
+  context:require "artist.turtle"
 else
-  context:get_class "artist.gui"
+  context:require "artist.gui"
 end
 
-context:save()
+context.config:save()
 
 local ok, err = pcall(context.run, context)
 if not ok then
-  log("[ERROR] " .. tostring(err))
+  context:logger("Main")(tostring(err))
   error(err, 0)
 end

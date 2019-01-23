@@ -3,7 +3,7 @@ local dialogue = require "artist.gui.dialogue"
 local item_list = require "artist.gui.item_list"
 
 return function(context, extract_items)
-  local mediator = context:get_class "artist.lib.mediator"
+  local mediator = context.mediator
 
   local width, height = term.getSize()
 

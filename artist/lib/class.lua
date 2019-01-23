@@ -1,3 +1,8 @@
+--- A tiny "class" implementation.
+--
+-- This does not support inheritance, operators, or anything complex - it's
+-- just a way of enabling method calls.
+
 local function tostring_instance(self) return self.name .. "<>" end
 local function tostring_class(self) return "Class<" .. self.__name .. ">" end
 

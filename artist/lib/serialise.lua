@@ -1,5 +1,5 @@
---- A varient of textutils's serialise functionality, but it doesn't emit
--- useless whitespace.
+--- A varient of textutils's serialise functionality, but somewhat optimised and
+-- without the redundant whitespace.
 
 local luaKeywords = {
   ["and"] = true, ["break"] = true, ["do"] = true, ["else"] = true,
@@ -79,6 +79,8 @@ local function deserialise(s)
 end
 
 return {
+  keywords    = luaKeywords,
+
   serialise   = serialise,
   deserialise = deserialise,
   unserialise = deserialise,

@@ -1,6 +1,7 @@
 --- Represents a system which shedules tasks for peripherals
 
 local class = require "artist.lib.class"
+local trace = require "artist.lib.trace"
 
 local func_info = function(fn)
   if type(debug) == "table" and debug.getinfo then
@@ -11,22 +12,12 @@ local func_info = function(fn)
   end
 end
 
---- Monitors the costs of various methods ensuring we
--- never error
-local method_costs = {
-  pushItems    = 20,
-
-  _default = 10,
-}
-
-local Peripherals = class "artist.lib.Peripherals"
+local Peripherals = class "artist.core.peripherals"
 
 function Peripherals:initialise(context)
-  local mediator = context:get_class("artist.lib.mediator")
-  local log = context:get_class("artist.lib.log")
+  local mediator = context.mediator
+  local log = context:logger("Peripherals")
   self.log = log
-
-  self.costs = context:get_config("method_costs", method_costs)
 
   self._active_filter = false
 
@@ -46,11 +37,11 @@ function Peripherals:initialise(context)
           filter = table.concat(filter, " ")
         end
 
-        log("[TASK] Executing " .. func_info(cur_task.fn) .. " on " .. filter)
+        log("Executing " .. func_info(cur_task.fn) .. " on " .. filter)
 
         local clock = os.clock()
-        cur_task:fn()
-        log(("[TASK] Finished executing in %.2fs"):format((os.clock() - clock)))
+        trace.call(function() return cur_task:fn() end)
+        log(("Finished executing in %.2fs"):format((os.clock() - clock)))
 
         cur_task, cur_filter = nil, nil
       else
@@ -65,7 +56,7 @@ function Peripherals:initialise(context)
 
       -- If needed, republish this event to mediator
       if mediator:has_subscribers("event." .. event[1]) then
-        log("[TASK] Event " .. event[1])
+        log("Event " .. event[1])
         mediator:publish("event." .. event[1], table.unpack(event, 2, event.n))
       end
 
@@ -101,26 +92,13 @@ function Peripherals:wrap(name)
     error("Cannot wrap peripheral '" .. name .. "'")
   end
 
-  local last_time = 0
-
   local out = { _name = name }
   for method, func in pairs(wrapped) do
-    local cost_delay = (self.costs[method] or self.costs._default) * 0.005
-
     out[method] = function(...)
       if not self:is_enabled(name) then
-        self.log(("[TASK] Peripheral %s (%s is currently enabled)"):format(name, self._active_filter))
+        self.log(("Peripheral %s (%s is currently enabled)"):format(name, self._active_filter))
         error("peripheral " .. name .. " is not enabled", 2)
       end
-      -- Compute the delay needed for us to "regenerate" to the maximum
-      -- energy level, sleeping for that time.
-      local time = os.clock()
-      local delta = last_time - time + cost_delay
-      if delta > 1e-5 then
-        sleep(delta)
-        time = os.clock()
-      end
-      last_time = time
 
       local res = table.pack(pcall(func, ...))
       if res[1] then

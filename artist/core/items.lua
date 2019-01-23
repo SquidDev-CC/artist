@@ -19,11 +19,11 @@ local function hash_item(item)
   return hash
 end
 
-local Items = class "artist.Items"
+local Items = class "artist.core.items"
 
 function Items:initialise(context)
-  self.mediator = context:get_class("artist.lib.mediator")
-  self.log = context:get_class("artist.lib.log")
+  self.mediator = context.mediator
+  self.log = context:logger("Items")
 
   --- Stores a list of inventories, and their slots contents.
   -- Each slot stores a count and an item hash. If the slot is empty then
@@ -49,7 +49,7 @@ function Items:get_item(hash, remote, slot)
   if entry then return entry end
   if not remote then return nil end
 
-  self.log(("[ITEMS] Cache miss for %s - fetching metadata"):format(hash))
+  self.log(("Cache miss for %s - fetching metadata"):format(hash))
   local meta = remote.getItemMeta(slot)
 
   -- We fetch the entry again just in case it was fetched between us
@@ -154,7 +154,7 @@ function Items:load_peripheral(name, remote)
   end
 
   local finish = os.epoch("utc")
-  self.log(("[ITEMS] Scanned inventory %s in %.2f seconds"):format(name, (finish - start) * 1e-3))
+  self.log(("Scanned inventory %s in %.2f seconds"):format(name, (finish - start) * 1e-3))
   self:broadcast_change(dirty)
 end
 
@@ -181,7 +181,7 @@ function Items:unload_peripheral(name)
   end
 
   self:broadcast_change(dirty)
-  self.log("[ITEMS] Unloaded " .. name)
+  self.log("Unloaded " .. name)
 end
 
 --- Returns the optional name and peripheral for a given source.

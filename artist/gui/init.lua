@@ -1,12 +1,12 @@
 local interface = require "artist.gui.interface"
 
 return function(context)
-  local mediator = context:get_class "artist.lib.mediator"
-  local deposit = context:get_config("pickup_chest", "minecraft:chest_xx")
+  local config = context.config
+    :group("pickup", "Defines a place to pick up items")
+    :define("chest", "The chest from which to pick up items", "minecraft:chest_xx")
+    :get()
 
-  return interface(context,
-    function(hash, quantity)
-      mediator:publish("items.extract", deposit, hash, quantity)
-    end
-  )
+  return interface(context, function(hash, quantity)
+    context.mediator:publish("items.extract", config.chest, hash, quantity)
+  end)
 end

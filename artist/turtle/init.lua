@@ -1,6 +1,6 @@
 local interface = require "artist.gui.interface"
 
-local Items = require "artist.items"
+local Items = require "artist.core.items"
 
 local this_turtle = require "artist.turtle.me"
 
@@ -8,9 +8,7 @@ local introspection = peripheral.find "plethora:introspection"
 local inventory = introspection.getInventory()
 
 return function(context)
-  local mediator = context:get_class "artist.lib.mediator"
-  local items = context:get_class "artist.items"
-  local peripherals = context:get_class "artist.lib.peripherals"
+  local items = context:require "artist.core.items"
 
   local protected_slots = {}
   local protect_all = false
@@ -55,8 +53,8 @@ return function(context)
       end
     end
 
-    mediator:subscribe("event.turtle_inventory", function()
-      peripherals:execute {
+    context.mediator:subscribe("event.turtle_inventory", function()
+      context.peripherals:execute {
         fn = turtle_dropoff,
         priority = 10,
         unique = true,
@@ -71,7 +69,7 @@ return function(context)
   end
 
   interface(context, function(hash, quantity)
-    peripherals:execute {
+    context.peripherals:execute {
       fn = turtle_pickup,
       priority = 30,
       peripheral = true,

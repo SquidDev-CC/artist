@@ -1,17 +1,17 @@
---- Gathers various bits of metadata about items in order to present them to
--- the user.
+--- The default item annotator.
+--
+-- Gathers various bits of metadata about items, in order to present them to the
+-- user.
 
 return function(context)
-  local mediator = context:get_class("artist.lib.mediator")
-
-  mediator:subscribe("items.annotate", function(meta, annotations)
+  context.mediator:subscribe("items.annotate", function(meta, annotations)
     local id = meta.name .. "@" .. meta.damage
 
     -- We strip the mod ID/namespace from the block ID, and rank it slightly
     -- higher.
     table.insert(annotations, {
       key = "Id path", value = id:gsub("^[^:]*", ""),
-      search_factor = 2.1, hidden=true,
+      search_factor = 2.1, hidden = true,
     })
 
     table.insert(annotations, { key = "Id", value = id, search_factor = 2 })
@@ -27,6 +27,7 @@ return function(context)
       end
     end
 
+    -- Durability
     if meta.maxDamage > 0 then
       table.insert(annotations, {
         key = "Durability",
@@ -37,6 +38,7 @@ return function(context)
       })
     end
 
+    -- Potion effects
     if meta.effects then
       for _, effect in ipairs(meta.effects) do
         table.insert(annotations, {
@@ -49,10 +51,12 @@ return function(context)
       end
     end
 
+    -- Media label (disk drive)
     if meta.media and meta.media.label then
       table.insert(annotations, { key = "Label", value = meta.media.label })
     end
 
+    -- And computer ID
     if meta.computer and meta.computer.id then
       table.insert(annotations, {
         key = "Computer",

@@ -1,19 +1,28 @@
---- Registers various methods for interacting with inventory peripherals
+--- Registers various methods for interacting with inventory peripherals.
+--
+-- This observes any inventories attached to the network and registers them with
+-- the item provider. We also re-scan inventories periodically in order to
+-- ensure external changes are taken into account.
 
 local class = require "artist.lib.class"
 local tbl = require "artist.lib.tbl"
 
 local Inventories = class "artist.items.Inventories"
 function Inventories:initialise(context)
-  local mediator = context:get_class("artist.lib.mediator")
-  local items = context:get_class("artist.items")
-  local peripherals = context:get_class("artist.lib.peripherals")
+  local items = context:require "artist.core.items"
+  local peripherals = context.peripherals
 
-  local inventory_rescan = context:get_config("inventory_rescan", 10)
-  self.blacklist = tbl.lookup(context:get_config("inventory_blacklist", {}))
-  self.blacklist_types = tbl.lookup(context:get_config("peripheral_blacklist", { "turtle", "minecraft:furnace" }))
+  local config = context.config
+    :group("inventories", "Options handling how inventories are read")
+    :define("rescan", "The time between rescanning each inventory", 10)
+    :define("blacklist", "A list of blacklisted inventory peripherals", {}, tbl.lookup)
+    :define("blacklist_types", "A list of blacklisted inventory peripheral types", { "turtle", "minecraft:furnace"}, tbl.lookup)
+    :get()
 
-  mediator:subscribe("event.peripheral", function(name)
+  self.blacklist = config.blacklist
+  self.blacklist_types = config.blacklist_types
+
+  context.mediator:subscribe("event.peripheral", function(name)
     if not self:enabled(name) then return end
 
     local remote = peripherals:wrap(name)
@@ -25,7 +34,7 @@ function Inventories:initialise(context)
     end
   end)
 
-  mediator:subscribe("event.peripheral_detach", function(name)
+  context.mediator:subscribe("event.peripheral_detach", function(name)
     items:unload_peripheral(name)
   end)
 
@@ -58,7 +67,7 @@ function Inventories:initialise(context)
   context:add_thread(function()
     local name = nil
     while true do
-      sleep(inventory_rescan)
+      sleep(config.rescan)
 
       if items.inventories[name] then
         name = next(items.inventories, name)

@@ -1,3 +1,5 @@
+--- A primitive event queue or pub/sub system.
+
 local class = require "artist.lib.class"
 
 local Mediator = class "artist.lib.mediator"

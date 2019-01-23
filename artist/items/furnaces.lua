@@ -1,42 +1,49 @@
---- Registers various methods for interacting with furnace peripherals
+--- Registers various methods for interacting with furnace peripherals.
+--
+-- This observes any furnaces attached to the network, and automatically fuels
+-- them and inserts the smelting results into the system.
 
 local class = require "artist.lib.class"
 local tbl = require "artist.lib.tbl"
 
-local Items = require "artist.items"
+local Items = require "artist.core.items"
 
 local Furnaces = class "artist.items.Furnaces"
 function Furnaces:initialise(context)
-  local mediator = context:get_class("artist.lib.mediator")
-  local items = context:get_class("artist.items")
-  local peripherals = context:get_class("artist.lib.peripherals")
-  local inventories = context:get_class("artist.items.inventories")
+  local items = context:require "artist.core.items"
+  local inventories = context:require "artist.items.inventories"
+  local log = context:logger("Furnace")
 
-  local furnace_rescan = context:get_config("furnace_rescan", 10)
-  self.blacklist = tbl.lookup(context:get_config("furnace_blacklist", {}))
-  self.furnace_types = tbl.lookup(context:get_config("furnace_types", { "minecraft:furnace" }))
-  self.fuels = context:get_config("furnace_fuels", {
-    "minecraft:coal@1", -- Charcoal
-    "minecraft:coal@0", -- Normal coal
-  })
+  local config = context.config
+    :group("furnace", "Options related to furnace automation")
+    :define("rescan", "The delay between rescanning furnaces", 10)
+    :define("blacklist", "A list of blacklisted furnace peripherals", {}, tbl.lookup)
+    :define("types", "A list of furnace peripheral types", { "turtle", "minecraft:furnace"}, tbl.lookup)
+    :define("fuels", "Possible fuel items", {
+      "minecraft:coal@1", -- Charcoal
+      "minecraft:coal@0", -- Normal coal
+    })
+    :get()
 
-  local log = context:get_class("artist.lib.log")
+  self.blacklist = config.blacklist
+  self.furnace_types = config.types
+  self.fuels = config.fuels
 
   -- Blacklist all furnace types
   for name in pairs(self.furnace_types) do inventories:add_blacklist_type(name) end
 
   self.furnaces = {}
 
-  mediator:subscribe("event.peripheral", function(name)
+  context.mediator:subscribe("event.peripheral", function(name)
     if not self:enabled(name) then return end
     self.furnaces[name] = {
       name = name,
-      remote = peripherals:wrap(name),
+      remote = context.peripherals:wrap(name),
       cooking = false
     }
   end)
 
-  mediator:subscribe("event.peripheral_detach", function(name)
+  context.mediator:subscribe("event.peripheral_detach", function(name)
     self.furnaces[name] = nil
   end)
 
@@ -44,6 +51,8 @@ function Furnaces:initialise(context)
     local name = data.name
     local furnace = self.furnaces[name]
     if not furnace then return end
+
+    log("Checking furnace %s", name)
 
     local ok, contents = pcall(furnace.remote.list)
     if not ok then return end -- Guard against "The block has changed". Dammit MC.
@@ -86,10 +95,9 @@ function Furnaces:initialise(context)
     -- First attach all furnaces
     for _, name in ipairs(peripheral.getNames()) do
       if self:enabled(name) then
-        log(("[Furnace] Found %s"):format(name))
         self.furnaces[name] = {
           name = name,
-          remote = peripherals:wrap(name),
+          remote = context.peripherals:wrap(name),
           cooking = false
         }
       end
@@ -98,8 +106,7 @@ function Furnaces:initialise(context)
     -- Now rescan them
     local name = nil
     while true do
-      log(("[Furnace] Sleeping %d"):format(furnace_rescan))
-      sleep(0)
+      sleep(config.rescan)
 
       if self.furnaces[name] then
         name = next(self.furnaces, name)
@@ -113,8 +120,7 @@ function Furnaces:initialise(context)
       end
 
       if name ~= nil then
-        log(("[Furnace] Pre-checking %s"):format(name))
-        peripherals:execute {
+        context.peripherals:execute {
           fn = check_furnace,
           name = name, peripheral = true,
         }

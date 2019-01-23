@@ -1,3 +1,5 @@
+--- A fuzzy string matcher.
+--
 --- Port of https://github.com/forrestthewoods/lib_fts/blob/master/code/fts_fuzzy_match.js
 -- to Lua
 
