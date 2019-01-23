@@ -40,7 +40,7 @@ Items.hash_item = hash_item
 
 function Items:broadcast_change(change)
   if next(change) == nil then return end
-  self.mediator:publish( { "items", "change" }, change)
+  self.mediator:publish("items.change", change)
 end
 
 --- Lookup the item entry

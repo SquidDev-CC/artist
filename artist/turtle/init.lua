@@ -55,7 +55,7 @@ return function(context)
       end
     end
 
-    mediator:subscribe( { "event", "turtle_inventory" }, function()
+    mediator:subscribe("event.turtle_inventory", function()
       peripherals:execute {
         fn = turtle_dropoff,
         priority = 10,

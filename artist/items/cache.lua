@@ -12,7 +12,7 @@ return function(context)
 
   -- When items have changed, reload the cache
   local changed_timer = nil
-  mediator:subscribe( { "items", "change" }, function(dirty)
+  mediator:subscribe("items.change", function(dirty)
     if not cache then return end
 
     -- Update the cache, determining whether it has changed or not

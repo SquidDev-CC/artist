@@ -80,7 +80,7 @@ return function(context, extract_items)
 
     annotate = function(meta)
       local annotations = {}
-      mediator:publish({ "items", "annotate" }, meta, annotations)
+      mediator:publish("items.annotate", meta, annotations)
       return annotations
     end,
   }
@@ -93,7 +93,7 @@ return function(context, extract_items)
 
   -- When we receive an item difference we update the item list. Tthis shedules
   -- a redraw if required.
-  mediator:subscribe( { "items", "change" }, items.update_items)
+  mediator:subscribe("items.change", items.update_items)
 
   context:add_thread(function()
     attach(items, 1)

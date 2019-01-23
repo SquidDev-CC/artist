@@ -64,9 +64,9 @@ function Peripherals:initialise(context)
       local event = table.pack(os.pullEvent())
 
       -- If needed, republish this event to mediator
-      if mediator:has_subscribers( { "event", event[1] }) then
+      if mediator:has_subscribers("event." .. event[1]) then
         log("[TASK] Event " .. event[1])
-        mediator:publish({ "event", event[1] }, table.unpack(event, 2, event.n))
+        mediator:publish("event." .. event[1], table.unpack(event, 2, event.n))
       end
 
       if cur_task == nil then

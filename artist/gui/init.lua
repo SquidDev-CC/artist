@@ -6,7 +6,7 @@ return function(context)
 
   return interface(context,
     function(hash, quantity)
-      mediator:publish( { "items", "extract" }, deposit, hash, quantity)
+      mediator:publish("items.extract", deposit, hash, quantity)
     end
   )
 end

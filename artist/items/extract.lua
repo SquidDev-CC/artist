@@ -15,7 +15,7 @@ return function(context)
   -- The extract channel just queues an extract task so we're not blocking
   -- the main coroutine.
   -- We use a medium priority level as this responds to user input
-  mediator:subscribe( { "items", "extract" }, function(to, hash, count)
+  mediator:subscribe("items.extract", function(to, hash, count)
     peripherals:execute {
       fn = extract,
       peripheral = true,

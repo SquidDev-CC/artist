@@ -13,7 +13,7 @@ function Inventories:initialise(context)
   self.blacklist = tbl.lookup(context:get_config("inventory_blacklist", {}))
   self.blacklist_types = tbl.lookup(context:get_config("peripheral_blacklist", { "turtle", "minecraft:furnace" }))
 
-  mediator:subscribe({ "event", "peripheral" }, function(name)
+  mediator:subscribe("event.peripheral", function(name)
     if not self:enabled(name) then return end
 
     local remote = peripherals:wrap(name)
@@ -25,7 +25,7 @@ function Inventories:initialise(context)
     end
   end)
 
-  mediator:subscribe({ "event", "peripheral_detach" }, function(name)
+  mediator:subscribe("event.peripheral_detach", function(name)
     items:unload_peripheral(name)
   end)
 

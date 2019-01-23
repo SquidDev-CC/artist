@@ -4,7 +4,7 @@
 return function(context)
   local mediator = context:get_class("artist.lib.mediator")
 
-  mediator:subscribe({ "items", "annotate" }, function(meta, annotations)
+  mediator:subscribe("items.annotate", function(meta, annotations)
     local id = meta.name .. "@" .. meta.damage
 
     -- We strip the mod ID/namespace from the block ID, and rank it slightly

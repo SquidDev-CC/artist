@@ -27,7 +27,7 @@ function Furnaces:initialise(context)
 
   self.furnaces = {}
 
-  mediator:subscribe({ "event", "peripheral" }, function(name)
+  mediator:subscribe("event.peripheral", function(name)
     if not self:enabled(name) then return end
     self.furnaces[name] = {
       name = name,
@@ -36,7 +36,7 @@ function Furnaces:initialise(context)
     }
   end)
 
-  mediator:subscribe({ "event", "peripheral_detach" }, function(name)
+  mediator:subscribe("event.peripheral_detach", function(name)
     self.furnaces[name] = nil
   end)
 
