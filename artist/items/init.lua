@@ -184,6 +184,32 @@ function Items:unload_peripheral(name)
   self.log("[ITEMS] Unloaded " .. name)
 end
 
+--- Returns the optional name and peripheral for a given source.
+local function extract_source(source)
+  local ty = type(source)
+  if ty == "string" then return source, nil
+  elseif ty == "table" then return source._name, source
+  else return nil end
+end
+
+-- Transfer items from inventory to another. Note, from or to
+-- can be a transfer location instead of a peripheral - we handle
+-- this automatically.
+local function transfer_items(from, fromSlot, to, toSlot, limit)
+  local from_name, from_obj = extract_source(from)
+  local to_name, to_obj = extract_source(to)
+
+  if from_obj ~= nil and to_name ~= nil then
+    -- Push from an object to a named target
+    return from_obj.pushItems(to_name, fromSlot, limit, toSlot)
+  elseif from_name ~= nil and to_obj ~= nil then
+    -- Pull from an object to a named target
+    return to.pullItems(from_name, fromSlot, limit, toSlot)
+  else
+    error(("Cannot transfer items from (%s, %s) to (%s, %s)"):format(from_name, from, to_name, to))
+  end
+end
+
 --- Extract a series of items from the system
 function Items:extract(to, entry, count, toSlot)
   local remaining = count
@@ -200,7 +226,7 @@ function Items:extract(to, entry, count, toSlot)
       local slot = slots[i]
 
       if slot.hash == hash then
-        local extracted = remote.pushItems(to, i, remaining, toSlot)
+        local extracted = transfer_items(remote, i, to, toSlot, remaining)
 
         update_count(entry, slot, name, -extracted)
         remaining = remaining - extracted
@@ -233,7 +259,7 @@ function Items:insert(from, entry, item)
       local slot = slots[i]
 
       if slot.hash == hash and slot.count < maxCount then
-        local inserted = remote.pullItems(from, item.slot, remaining, i)
+        local inserted = transfer_items(from, item.slot, remote, i, remaining)
 
         update_count(entry, slot, name, inserted)
         remaining = remaining - inserted
@@ -254,7 +280,7 @@ function Items:insert(from, entry, item)
         local slot = slots[i]
 
         if slot.count == 0 then
-          local inserted = remote.pullItems(from, item.slot, remaining, i)
+          local inserted = transfer_items(from, item.slot, remote, i, remaining)
 
           update_count(entry, slot, name, inserted)
           remaining = remaining - inserted
@@ -277,7 +303,7 @@ function Items:insert(from, entry, item)
         local slot = slots[i]
 
         if slot.count == 0 then
-          local inserted = remote.pullItems(from, item.slot, remaining, i)
+          local inserted = transfer_items(from, item.slot, remote, i, remaining)
 
           update_count(entry, slot, name, inserted)
           remaining = remaining - inserted

@@ -20,6 +20,8 @@ function Furnaces:initialise(context)
     "minecraft:coal@0", -- Normal coal
   })
 
+  local log = context:get_class("artist.lib.log")
+
   -- Blacklist all furnace types
   for name in pairs(self.furnace_types) do inventories:add_blacklist_type(name) end
 
@@ -68,14 +70,14 @@ function Furnaces:initialise(context)
       if fuel_entry and fuel_entry.count > 0 then
         local amount = 64
         if fuel then amount = 64 - fuel.count end
-        items:extract(name, fuel_entry, amount, 2)
+        items:extract(furnace.remote, fuel_entry, amount, 2)
       end
     end
 
     if output then
       local entry = items:get_item(Items.hash_item(output), furnace.remote, 3)
       output.slot = 3
-      items:insert(name, entry, output)
+      items:insert(furnace.remote, entry, output)
     end
   end
 
@@ -84,6 +86,7 @@ function Furnaces:initialise(context)
     -- First attach all furnaces
     for _, name in ipairs(peripheral.getNames()) do
       if self:enabled(name) then
+        log(("[Furnace] Found %s"):format(name))
         self.furnaces[name] = {
           name = name,
           remote = peripherals:wrap(name),
@@ -95,7 +98,8 @@ function Furnaces:initialise(context)
     -- Now rescan them
     local name = nil
     while true do
-      sleep(furnace_rescan)
+      log(("[Furnace] Sleeping %d"):format(furnace_rescan))
+      sleep(0)
 
       if self.furnaces[name] then
         name = next(self.furnaces, name)
@@ -109,6 +113,7 @@ function Furnaces:initialise(context)
       end
 
       if name ~= nil then
+        log(("[Furnace] Pre-checking %s"):format(name))
         peripherals:execute {
           fn = check_furnace,
           name = name, peripheral = true,

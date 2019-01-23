@@ -30,7 +30,7 @@ return function(context)
           count = count + 1
           item.slot = slot
           local entry = items:get_item(Items.hash_item(item), dropoff_remote, slot)
-          items:insert(dropoff_name, entry, item)
+          items:insert(dropoff_remote, entry, item)
         end
 
         if count == 0 then break end
