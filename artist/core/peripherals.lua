@@ -52,7 +52,7 @@ function Peripherals:initialise(context)
 
   context:add_thread(function()
     while true do
-      local event = table.pack(os.pullEvent())
+      local event = table.pack(coroutine.yield())
 
       -- If needed, republish this event to mediator
       if mediator:has_subscribers("event." .. event[1]) then
@@ -96,8 +96,8 @@ function Peripherals:wrap(name)
   for method, func in pairs(wrapped) do
     out[method] = function(...)
       if not self:is_enabled(name) then
-        self.log(("Peripheral %s (%s is currently enabled)"):format(name, self._active_filter))
-        error("peripheral " .. name .. " is not enabled", 2)
+        self.log(("Illegal use of peripheral %s (%s is currently enabled)"):format(name, self._active_filter))
+        error("Peripheral " .. name .. " is not enabled", 2)
       end
 
       local res = table.pack(pcall(func, ...))

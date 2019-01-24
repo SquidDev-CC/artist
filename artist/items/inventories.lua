@@ -7,6 +7,8 @@
 local class = require "artist.lib.class"
 local tbl = require "artist.lib.tbl"
 
+local rs_sides = tbl.lookup(redstone.getSides())
+
 local Inventories = class "artist.items.Inventories"
 function Inventories:initialise(context)
   local items = context:require "artist.core.items"
@@ -107,7 +109,7 @@ function Inventories:add_blacklist_type(name)
 end
 
 function Inventories:enabled(name)
-  return self.blacklist[name] == nil and self.blacklist_types[peripheral.getType(name)] == nil
+  return rs_sides[name] == nil and self.blacklist[name] == nil and self.blacklist_types[peripheral.getType(name)] == nil
 end
 
 return Inventories

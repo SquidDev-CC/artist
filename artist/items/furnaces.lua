@@ -8,9 +8,12 @@ local tbl = require "artist.lib.tbl"
 
 local Items = require "artist.core.items"
 
+local rs_sides = tbl.lookup(redstone.getSides())
+
 local Furnaces = class "artist.items.Furnaces"
+
 function Furnaces:initialise(context)
-  local items = context:require "artist.core.items"
+  local items = context:require(Items)
   local inventories = context:require "artist.items.inventories"
   local log = context:logger("Furnace")
 
@@ -135,7 +138,7 @@ function Furnaces:add_blacklist(name)
 end
 
 function Furnaces:enabled(name)
-  return self.blacklist[name] == nil and self.furnace_types[peripheral.getType(name)] ~= nil
+  return rs_sides[name] == nil and self.blacklist[name] == nil and self.furnace_types[peripheral.getType(name)] ~= nil
 end
 
 return Furnaces
