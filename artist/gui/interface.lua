@@ -77,12 +77,6 @@ return function(context, extract_items)
       attach(dialogue_quantity, 2)
       active_control = dialogue_quantity
     end,
-
-    annotate = function(meta)
-      local annotations = {}
-      mediator:publish("items.annotate", meta, annotations)
-      return annotations
-    end,
   }
 
   local item_filter = read {
@@ -93,7 +87,7 @@ return function(context, extract_items)
 
   -- When we receive an item difference we update the item list. Tthis shedules
   -- a redraw if required.
-  mediator:subscribe("items.change", items.update_items)
+  mediator:subscribe("item_list.update", items.update_items)
 
   context:add_thread(function()
     attach(items, 1)

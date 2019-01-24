@@ -61,7 +61,6 @@ return function(options)
   local height = gets(options, "height", "number")
 
   local selected = gets(options, "selected", "function")
-  local annotate = gets(options, "annotate", "function")
 
   local items = {}
   local display_items = {}
@@ -184,19 +183,26 @@ return function(options)
 
     --- Change a subset of the specified items
     update_items = function(change)
-      for item in pairs(change) do
-        local existing = items[item.hash]
-        if not existing then
-          existing = {
-            hash        = item.hash,
-            displayName = item.meta.displayName,
-            annotations = annotate(item.meta),
-          }
+      for hash, item in pairs(change) do
+        local existing = items[hash]
+        if type(item) == "number" then
+          if not existing then
+            -- Make up some values if we've no info on this item already
+            existing = { hash = hash, displayName = hash, annotations = {} }
+            items[hash] = existing
+          end
 
-          items[item.hash] = existing
+          existing.count = item
+        else
+          if not existing then
+            existing = { hash = hash }
+            items[hash] = existing
+          end
+
+          existing.displayName = item.name
+          existing.annotations = item.annotations
+          existing.count = item.count
         end
-
-        existing.count = item.count
       end
 
       display_items = build_list(items, filter)

@@ -89,6 +89,7 @@ return function(context)
     items:broadcast_change(dirty)
   end
 
+  -- TODO: Move this into a startup task instead.
   context.peripherals:execute {
     fn = load_cache,
     priority = 1e6,

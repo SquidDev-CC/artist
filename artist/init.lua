@@ -8,6 +8,7 @@ context:require "artist.items.extract"
 context:require "artist.items.furnaces"
 context:require "artist.items.inventories"
 context:require "artist.items.annotate"
+context:require "artist.items.annotations"
 
 if turtle then
   context:require "artist.turtle"
