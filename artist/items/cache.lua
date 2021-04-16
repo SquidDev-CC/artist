@@ -1,6 +1,6 @@
 --- Caches all item metadata.
 --
--- .getItemMeta can be rather expensive, so we cache it in order to provide
+-- .getItemDetail can be rather expensive, so we cache it in order to provide
 -- more efficient loading.
 
 local serialise = require "artist.lib.serialise"

@@ -4,9 +4,6 @@ local Items = require "artist.core.items"
 
 local this_turtle = require "artist.turtle.me"
 
-local introspection = peripheral.find "plethora:introspection"
-local inventory = introspection.getInventory()
-
 return function(context)
   local items = context:require "artist.core.items"
 
@@ -32,41 +29,38 @@ return function(context)
     end
   end
 
-  if inventory then
-    local function turtle_dropoff()
-      if protect_all then return false end
+  local function turtle_dropoff()
+    if protect_all then return false end
 
-      local item_list = inventory.list()
-      for i = 1, 16 do
-        local protect_item = protected_slots[i]
-        local item = item_list[i]
-        if item == nil then
-          -- If we've no item then unprotect this slot
-          protected_slots[i] = false
-        elseif not protect_item or item.name ~= protect_item.name or item.damage ~= protect_item.damage then
-          -- Otherwise if we're not protected or the protection isn't matching
-          -- then extract
-          local entry = items:get_item(Items.hash_item(item), inventory, i)
+    for i = 1, 16 do
+      local protect_item = protected_slots[i]
+      local item = turtle.getItemDetail(i)
+      if item == nil then
+        -- If we've no item then unprotect this slot
+        protected_slots[i] = false
+      elseif not protect_item or item.name ~= protect_item.name then
+        -- Otherwise if we're not protected or the protection isn't matching
+        -- then extract
+        local item = turtle.getItemDetail(i, true)
+        if item then -- Potential race condition here.
+          local entry = items:get_item(Items.hash_item(item), item)
           item.slot = i
           items:insert(this_turtle, entry, item)
         end
       end
     end
-
-    context.mediator:subscribe("event.turtle_inventory", function()
-      context.peripherals:execute {
-        fn = turtle_dropoff,
-        priority = 10,
-        unique = true,
-        peripheral = true,
-      }
-    end)
-
-    os.queueEvent("turtle_inventory")
-  else
-    printError("No introspection module, item pickup will not function")
-    sleep(2)
   end
+
+  context.mediator:subscribe("event.turtle_inventory", function()
+    context.peripherals:execute {
+      fn = turtle_dropoff,
+      priority = 10,
+      unique = true,
+      peripheral = true,
+    }
+  end)
+
+  os.queueEvent("turtle_inventory")
 
   interface(context, function(hash, quantity)
     context.peripherals:execute {

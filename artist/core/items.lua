@@ -14,8 +14,8 @@ local class = require "artist.lib.class"
 --- Calculate the hash of a particular item.
 local function hash_item(item)
   if item == nil then return nil end
-  local hash = item.name .. "@" .. item.damage
-  if item.nbtHash then hash = hash .. "@" .. item.nbtHash end
+  local hash = item.name
+  if item.nbt then hash = hash .. "@" .. item.nbt end
   return hash
 end
 
@@ -44,13 +44,21 @@ function Items:broadcast_change(change)
 end
 
 --- Lookup the item entry
-function Items:get_item(hash, remote, slot)
+function Items:get_item(hash, obj, slot)
   local entry = self.item_cache[hash]
   if entry then return entry end
-  if not remote then return nil end
 
-  self.log(("Cache miss for %s - fetching metadata"):format(hash))
-  local meta = remote.getItemMeta(slot)
+  local meta
+  if not obj then
+    return nil
+  elseif obj.name and obj.count then
+    meta = obj -- Full details
+  elseif obj.getItemDetail then
+    self.log(("Cache miss for %s - fetching metadata"):format(hash))
+    meta = obj.getItemDetail(slot)
+  else
+    error("Bad argument to get_item")
+  end
 
   -- We fetch the entry again just in case it was fetched between us
   -- starting and ending the request

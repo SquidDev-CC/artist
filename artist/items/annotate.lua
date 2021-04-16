@@ -5,7 +5,7 @@
 
 return function(context)
   context.mediator:subscribe("items.annotate", function(meta, annotations)
-    local id = meta.name .. "@" .. meta.damage
+    local id = meta.name
 
     -- We strip the mod ID/namespace from the block ID, and rank it slightly
     -- higher.
@@ -23,12 +23,12 @@ return function(context)
     -- Enchantments
     if meta.enchantments then
       for _, enchant in ipairs(meta.enchantments) do
-        table.insert(annotations, { key = "Enchant", value = enchant.fullName })
+        table.insert(annotations, { key = "Enchant", value = enchant.displayName })
       end
     end
 
     -- Durability
-    if meta.maxDamage > 0 then
+    if meta.maxDamage then
       table.insert(annotations, {
         key = "Durability",
         value = ("%d/%d (%.2f%%)"):format(

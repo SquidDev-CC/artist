@@ -48,7 +48,7 @@ function Inventories:initialise(context)
       local name = peripheral_names[i]
       if self:enabled(name) then
         local remote = peripherals:wrap(name)
-        if remote and remote.list and remote.getItemMeta then
+        if remote and remote.list and remote.getItemDetail then
           queue[#queue + 1] = function() items:load_peripheral(name, remote) end
         end
       end
