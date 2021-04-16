@@ -1,10 +1,9 @@
 # A Rather Tremendous Item SysTem
-Artist is an inventory mangement system powered by [Plethora][plethora]. using
-CC:Tweaked's (or CCTweaks) wired network extensions.
+Artist is an inventory mangement system for CC: Tweaked (requires MC 1.15.x
+or later).
 
 One could think of it as a poor-man's AE network. It offers an easy way to store
-and extract items, but powered entirely through ComputerCraft and peripheral
-mods.
+and extract items, but powered entirely through ComputerCraft.
 
 ## Features
  - Index an arbitrary number of inventories (chests, barrel, crates, etc...),
@@ -21,9 +20,9 @@ mods.
 ## See also
 It should be noted that this is not the only item system out there, nor is it
 necessarily the best. You should also check out [these][turtlegistics]
-[two][roger]. One notable missing feature is the ability to run multiple
-instances on the same set of chests.
+[fantastic][roger] [programs][milo]. One notable missing feature is the ability
+to run multiple instances on the same set of chests.
 
-[plethora]: https://minecraft.curseforge.com/projects/plethora-peripherals "See Plethora on CurseForge"
 [turtlegistics]: https://github.com/apemanzilla/turtlegistics "Tutlegistics on GitHub"
 [roger]: http://www.computercraft.info/forums2/index.php?/topic/28438- "roger109z's item system on the CCF"
+[milo]: https://github.com/kepler155c/opus-apps/tree/develop-1.8/milo
