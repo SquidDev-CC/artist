@@ -14,6 +14,10 @@ mods.
    smelted items into the main system.
  - Caching of item information, allowing for speedier startup.
 
+## Install
+ - Place down a turtle and some chests, and connect them all together with a wired modem.
+ - Run `wget run https://gist.githubusercontent.com/SquidDev/e0f82765bfdefd48b0b15a5c06c0603b/raw/clone.lua https://github.com/SquidDev-CC/artist.git` on your computer to install artist.
+ - Run `artist/launch.lua` to start it. You may want to call this from your `startup.lua` file!
 ## See also
 It should be noted that this is not the only item system out there, nor is it
 necessarily the best. You should also check out [these][turtlegistics]
