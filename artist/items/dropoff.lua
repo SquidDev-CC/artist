@@ -16,11 +16,14 @@ return function(context)
   local dropoff_chests = {}
   for i = 1, #config.chests do
     local dropoff = config.chests[i]
-    inventories:add_blacklist(dropoff)
+    inventories:add_ignored_name(dropoff)
 
     local wrapped = context.peripherals:wrap(dropoff)
     if wrapped then dropoff_chests[dropoff] = wrapped end
   end
+
+  -- Don't bother to register anything if we've got no chests!
+  if next(dropoff_chests) == nil then return end
 
   local function dropoff()
     for _, dropoff_remote in pairs(dropoff_chests) do

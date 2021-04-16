@@ -20,20 +20,20 @@ function Furnaces:initialise(context)
   local config = context.config
     :group("furnace", "Options related to furnace automation")
     :define("rescan", "The delay between rescanning furnaces", 10)
-    :define("blacklist", "A list of blacklisted furnace peripherals", {}, tbl.lookup)
-    :define("types", "A list of furnace peripheral types", { "turtle", "minecraft:furnace"}, tbl.lookup)
+    :define("ignored", "A list of ignored furnace peripherals", {}, tbl.lookup)
+    :define("types", "A list of furnace types", { "minecraft:furnace"}, tbl.lookup)
     :define("fuels", "Possible fuel items", {
-      "minecraft:coal@1", -- Charcoal
-      "minecraft:coal@0", -- Normal coal
+      "minecraft:charcoal",
+      "minecraft:coal",
     })
     :get()
 
-  self.blacklist = config.blacklist
+  self.ignored = config.ignored
   self.furnace_types = config.types
   self.fuels = config.fuels
 
-  -- Blacklist all furnace types
-  for name in pairs(self.furnace_types) do inventories:add_blacklist_type(name) end
+  -- ignored all furnace types
+  for name in pairs(self.furnace_types) do inventories:add_ignored_type(name) end
 
   self.furnaces = {}
 
@@ -132,13 +132,13 @@ function Furnaces:initialise(context)
   end)
 end
 
-function Furnaces:add_blacklist(name)
+function Furnaces:add_ignored(name)
   if type(name) ~= "string" then error("bad argument #1, expected string", 2) end
-  self.blacklist[name] = true
+  self.ignored[name] = true
 end
 
 function Furnaces:enabled(name)
-  return rs_sides[name] == nil and self.blacklist[name] == nil and self.furnace_types[peripheral.getType(name)] ~= nil
+  return rs_sides[name] == nil and self.ignored[name] == nil and self.furnace_types[peripheral.getType(name)] ~= nil
 end
 
 return Furnaces

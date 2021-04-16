@@ -17,12 +17,13 @@ function Inventories:initialise(context)
   local config = context.config
     :group("inventories", "Options handling how inventories are read")
     :define("rescan", "The time between rescanning each inventory", 10)
-    :define("blacklist", "A list of blacklisted inventory peripherals", {}, tbl.lookup)
-    :define("blacklist_types", "A list of blacklisted inventory peripheral types", { "turtle", "minecraft:furnace"}, tbl.lookup)
+    :define("ignored_names", "A list of ignored inventory peripherals", {}, tbl.lookup)
+    :define("ignored_types", "A list of ignored inventory peripheral types", { "turtle" }, tbl.lookup)
     :get()
 
-  self.blacklist = config.blacklist
-  self.blacklist_types = config.blacklist_types
+  self.ignored_names, self.ignored_types = {}, {}
+  for _, k in pairs(config.ignored_names) do self.ignored_names[k] = true end
+  for _, k in pairs(config.ignored_types) do self.ignored_types[k] = true end
 
   context.mediator:subscribe("event.peripheral", function(name)
     if not self:enabled(name) then return end
@@ -98,18 +99,18 @@ function Inventories:initialise(context)
   }
 end
 
-function Inventories:add_blacklist(name)
+function Inventories:add_ignored_name(name)
   if type(name) ~= "string" then error("bad argument #1, expected string", 2) end
-  self.blacklist[name] = true
+  self.ignored_names[name] = true
 end
 
-function Inventories:add_blacklist_type(name)
+function Inventories:add_ignored_type(name)
   if type(name) ~= "string" then error("bad argument #1, expected string", 2) end
-  self.blacklist_types[name] = true
+  self.ignored_types[name] = true
 end
 
 function Inventories:enabled(name)
-  return rs_sides[name] == nil and self.blacklist[name] == nil and self.blacklist_types[peripheral.getType(name)] == nil
+  return rs_sides[name] == nil and self.ignored_names[name] == nil and self.ignored_types[peripheral.getType(name)] == nil
 end
 
 return Inventories
