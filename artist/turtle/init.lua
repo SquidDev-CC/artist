@@ -16,7 +16,8 @@ return function(context)
       protect_all = true
 
       items:extract(this_turtle, item, data.count)
-
+      turtle.drop()
+      
       -- Scan all slots and attempt to determine which ones should be considered "protected"
       -- Namely, which ones shouldn't we pick up from.
       for i = 1, 16 do
