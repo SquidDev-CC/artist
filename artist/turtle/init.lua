@@ -20,8 +20,8 @@ return function(context)
       -- Scan all slots and attempt to determine which ones should be considered "protected"
       -- Namely, which ones shouldn't we pick up from.
       for i = 1, 16 do
-        local info = turtle.getItemDetail(i,true)
-        if info and info.name == item.meta.name and info.nbt == item.meta.nbt then
+        local info = turtle.getItemDetail(i)
+        if info and info.name == item.meta.name then
           protected_slots[i] = info
         end
       end

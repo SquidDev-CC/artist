@@ -55,7 +55,7 @@ function Items:get_item(hash, obj, slot)
     meta = obj -- Full details
   elseif obj.getItemDetail then
     self.log(("Cache miss for %s - fetching metadata"):format(hash))
-    meta = obj.getItemDetail(slot,true)
+    meta = obj.getItemDetail(slot, true)
   else
     error("Bad argument to get_item")
   end
