@@ -19,7 +19,8 @@ function Furnaces:initialise(context)
 
   local config = context.config
     :group("furnace", "Options related to furnace automation")
-    :define("rescan", "The delay between rescanning furnaces", 10)
+    :define("cold_rescan", "The delay between rescanning cold (non-smelting) furnaces", 10)
+    :define("hot_rescan", "The delay between rescanning hot (smelting) furnaces", 2)
     :define("ignored", "A list of ignored furnace peripherals", {}, tbl.lookup)
     :define("types", "A list of furnace types", { "minecraft:furnace"}, tbl.lookup)
     :define("fuels", "Possible fuel items", {
@@ -35,24 +36,26 @@ function Furnaces:initialise(context)
   -- ignored all furnace types
   for name in pairs(self.furnace_types) do inventories:add_ignored_type(name) end
 
-  self.furnaces = {}
+  self.hot_furnaces = {}
+  self.cold_furnaces = {}
 
   context.mediator:subscribe("event.peripheral", function(name)
     if not self:enabled(name) then return end
-    self.furnaces[name] = {
+    self.hot_furnaces[name] = {
       name = name,
       remote = context.peripherals:wrap(name),
-      cooking = false
+      cooking = true
     }
   end)
 
   context.mediator:subscribe("event.peripheral_detach", function(name)
-    self.furnaces[name] = nil
+    self.hot_furnaces[name] = nil
+    self.cold_furnaces[name] = nil
   end)
 
   local function check_furnace(data)
     local name = data.name
-    local furnace = self.furnaces[name]
+    local furnace = self.hot_furnaces[name] or self.cold_furnaces[name]
     if not furnace then return end
 
     log("Checking furnace %s", name)
@@ -64,7 +67,16 @@ function Furnaces:initialise(context)
     local fuel = contents[2]
     local output = contents[3]
 
-    furnace.cooking = input and input.count > 0 or false
+    -- Flip between the hot and cold sets.
+    local new_cooking = input and (input.count > 0 or output.count > 0) or false
+    if new_cooking ~= furnace.cooking then
+      if new_cooking then
+        self.hot_furnaces[name], self.cold_furnaces[name] = furnace, nil
+      else
+        self.hot_furnaces[name], self.cold_furnaces[name] = nil, furnace
+      end
+    end
+    furnace.cooking = new_cooking
 
     -- Only refuel when halfway there
     if not fuel or fuel.count < 32 then
@@ -93,34 +105,20 @@ function Furnaces:initialise(context)
     end
   end
 
-  --- Add a thread which periodically rescans all peripherals
-  context:add_thread(function()
-    -- First attach all furnaces
-    for _, name in ipairs(peripheral.getNames()) do
-      if self:enabled(name) then
-        self.furnaces[name] = {
-          name = name,
-          remote = context.peripherals:wrap(name),
-          cooking = false
-        }
-      end
-    end
-
-    -- Now rescan them
+  local function check_furnaces(furnaces, delay)
     local name = nil
     while true do
-      sleep(config.rescan)
+      sleep(delay)
 
-      if self.furnaces[name] then
-        name = next(self.furnaces, name)
+      name = next(furnaces, name)
+      if furnaces[name] then
+        name = next(furnaces, name)
       else
         name = nil
       end
 
-      if name == nil then
-        -- Attempt to wrap around to the start.
-        name = next(self.furnaces, nil)
-      end
+      -- Attempt to wrap around to the start.
+      if name == nil then name = next(furnaces, nil) end
 
       if name ~= nil then
         context.peripherals:execute {
@@ -129,7 +127,22 @@ function Furnaces:initialise(context)
         }
       end
     end
-  end)
+  end
+
+  -- First attach all furnaces as hot, as that ensures they get ticked earlier.
+  for _, name in ipairs(peripheral.getNames()) do
+    if self:enabled(name) then
+      self.hot_furnaces[name] = {
+        name = name,
+        remote = context.peripherals:wrap(name),
+        cooking = true
+      }
+    end
+  end
+
+  --- Periodically rescans all furnaces, with
+  context:add_thread(function() check_furnaces(self.hot_furnaces, config.hot_rescan) end)
+  context:add_thread(function() check_furnaces(self.cold_furnaces, config.cold_rescan) end)
 end
 
 function Furnaces:add_ignored(name)
