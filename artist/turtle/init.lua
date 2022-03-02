@@ -10,6 +10,11 @@ return function(context)
   local protected_slots = {}
   local protect_all = false
 
+  local config = context.config
+    :group("turtle", "Options related to the turtle interface")
+    :define("auto_drop", "Drop items from the turtle, rather than leaving them in the inventory.", false)
+    :get()
+
   local function turtle_pickup(data)
     local item = items:get_item(data.hash)
     if item then
@@ -22,9 +27,16 @@ return function(context)
       for i = 1, 16 do
         local info = turtle.getItemDetail(i)
         if info and info.name == item.meta.name then
-          protected_slots[i] = info
+          if config.auto_drop then
+            turtle.select(i)
+            turtle.drop()
+          else
+            protected_slots[i] = info
+          end
         end
       end
+
+      if config.auto_drop then turtle.select(1) end
       protect_all = false
     end
   end
