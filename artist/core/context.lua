@@ -1,5 +1,7 @@
 --- Handles configuration and dependency injection
 
+local expect = require "cc.expect".expect
+
 local class = require "artist.lib.class"
 local log = require "artist.lib.log"
 local trace = require "artist.lib.trace"
@@ -49,14 +51,16 @@ function Context:run()
   end
 end
 
-function Context:logger(kind)
-  local log, prefix = self.log, ("[%s] "):format(kind)
+function Context:logger(prefix)
+  expect(1, prefix, "string")
+
+  local log = self.log
   return function(msg, ...)
     msg = tostring(msg)
     if select('#', ...) == 0 then
-      log(prefix .. msg)
+      log(prefix, msg)
     else
-      log(prefix .. msg:format(...))
+      log(prefix, msg:format(...))
     end
   end
 end
