@@ -1,5 +1,5 @@
 # A Rather Tremendous Item SysTem
-Artist is an inventory mangement system for CC: Tweaked (requires MC 1.15.x
+Artist is an inventory management system for CC: Tweaked (requires MC 1.15.x
 or later).
 
 One could think of it as a poor-man's AE network. It offers an easy way to store
@@ -9,7 +9,7 @@ and extract items, but powered entirely through ComputerCraft.
  - Index an arbitrary number of inventories (chests, barrel, crates, etc...),
    allowing for insertion and extraction from them.
  - Simple interface to view and request items.
- - Furnace mangement support, able to automatically refuel furnaces and insert
+ - Furnace management support, able to automatically refuel furnaces and insert
    smelted items into the main system.
  - Caching of item information, allowing for speedier startup.
 

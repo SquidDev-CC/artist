@@ -163,6 +163,7 @@ function Items:load_peripheral(name, remote)
 
   local finish = os.epoch("utc")
   self.log(("Scanned inventory %s in %.2f seconds"):format(name, (finish - start) * 1e-3))
+  self.mediator:publish("items.inventories_change")
   self:broadcast_change(dirty)
 end
 
@@ -188,6 +189,7 @@ function Items:unload_peripheral(name)
     end
   end
 
+  self.mediator:publish("items.inventories_change")
   self:broadcast_change(dirty)
   self.log("Unloaded " .. name)
 end

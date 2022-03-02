@@ -46,11 +46,13 @@ function Furnaces:initialise(context)
       remote = context.peripherals:wrap(name),
       cooking = true
     }
+    context.mediator:publish("furnaces.change")
   end)
 
   context.mediator:subscribe("event.peripheral_detach", function(name)
     self.hot_furnaces[name] = nil
     self.cold_furnaces[name] = nil
+    context.mediator:publish("furnaces.change")
   end)
 
   local function check_furnace(data)
@@ -75,8 +77,9 @@ function Furnaces:initialise(context)
       else
         self.hot_furnaces[name], self.cold_furnaces[name] = nil, furnace
       end
+      furnace.cooking = new_cooking
+      context.mediator:publish("furnaces.change")
     end
-    furnace.cooking = new_cooking
 
     -- Only refuel when halfway there
     if not fuel or fuel.count < 32 then
@@ -137,6 +140,7 @@ function Furnaces:initialise(context)
         remote = context.peripherals:wrap(name),
         cooking = true
       }
+      context.mediator:publish("furnaces.change")
     end
   end
 
