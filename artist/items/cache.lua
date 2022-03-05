@@ -4,10 +4,10 @@
 -- more efficient loading.
 
 local serialise = require "artist.lib.serialise"
+local log = require "artist.lib.log".get_logger(...)
 
 return function(context)
   local items = context:require "artist.core.items"
-  local log = context:logger("Cache")
 
   local config = context.config
     :group("cache", "Cache item metadata to ensure faster startup speeds")
@@ -52,7 +52,7 @@ return function(context)
         local start = os.epoch("utc")
         serialise.serialise_to(".artist.d/cache", { items = cached_items })
         local finish = os.epoch("utc")
-        log(("Stored in %.2fs"):format((finish - start) * 1e-3))
+        log("Stored in %.2fs", (finish - start) * 1e-3)
       end
 
       repeat
@@ -84,7 +84,7 @@ return function(context)
     end
 
     local finish = os.epoch("utc")
-    log(("Loaded in %.2fs"):format((finish - start) * 1e-3))
+    log("Loaded in %.2fs", (finish - start) * 1e-3)
 
     items:broadcast_change(dirty)
   end

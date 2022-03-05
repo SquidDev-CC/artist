@@ -10,6 +10,7 @@
 -- All items with the same hash are considered equivalent.
 
 local class = require "artist.lib.class"
+local log = require "artist.lib.log".get_logger(...)
 
 --- Calculate the hash of a particular item.
 local function hash_item(item)
@@ -23,7 +24,6 @@ local Items = class "artist.core.items"
 
 function Items:initialise(context)
   self.mediator = context.mediator
-  self.log = context:logger("Items")
 
   --- Stores a list of inventories, and their slots contents.
   -- Each slot stores a count and an item hash. If the slot is empty then
@@ -54,7 +54,7 @@ function Items:get_item(hash, obj, slot)
   elseif obj.name and obj.count then
     meta = obj -- Full details
   elseif obj.getItemDetail then
-    self.log(("Cache miss for %s - fetching metadata"):format(hash))
+    log("Cache miss for %s - fetching metadata", hash)
     meta = obj.getItemDetail(slot, true)
   else
     error("Bad argument to get_item")
@@ -162,7 +162,7 @@ function Items:load_peripheral(name, remote)
   end
 
   local finish = os.epoch("utc")
-  self.log(("Scanned inventory %s in %.2f seconds"):format(name, (finish - start) * 1e-3))
+  log("Scanned inventory %s in %.2f seconds", name, (finish - start) * 1e-3)
   self.mediator:publish("items.inventories_change")
   self:broadcast_change(dirty)
 end
@@ -191,7 +191,7 @@ function Items:unload_peripheral(name)
 
   self.mediator:publish("items.inventories_change")
   self:broadcast_change(dirty)
-  self.log("Unloaded " .. name)
+  log("Unloaded %s", name)
 end
 
 --- Returns the optional name and peripheral for a given source.

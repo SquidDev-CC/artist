@@ -1,38 +1,58 @@
---- Construct a logger which writes to the provided path
---
--- The file is cleared when logging first starts. Each line contains
--- the time since logging started, followed by the log message
+--[[- A basic logging library.
 
+This writes messages to a log file (.artist.d/log), rotating the file when it
+gets too large (more than 64KiB).
+]]
+
+local select, os, fs = select, os, fs
 local expect = require "cc.expect".expect
 
-return function(path)
-  expect(1, path, "string")
+local path = ".artist.d/log"
+local old_path = ".artist.d/log.1"
 
-  if fs.exists(path) then fs.delete(path) end
+fs.delete(path)
 
-  local i = 0
-  return function(prefix, msg)
-    expect(1, prefix, "string")
-    expect(2, msg, "string")
+local size, max_size = 0, 64 * 1024
 
-    if i > 1024 then
-      -- Log files end up taking a /lot/ of space. We rotate them every 1024
-      -- messages, which means we're generally gonna take up no more than
-      -- 100kib.
-      -- There's an argument that logging should be off by default or something,
-      -- but it's so useful when it goes wrong.
-      i = 0
-      fs.delete(path .. ".old")
-      fs.move(path, path .. ".old")
-    end
+--[[- Log a message.
 
-    local now  = os.epoch("utc")
-    local date = os.date("%Y-%m-%d %H:%M:%S", now / 1000)
-    local ms = ("%.2f"):format((now % 1000) * 1e-3):sub(2)
+@tparam string tag A tag for this log message, typically the module it came from.
+@tparam string msg The message to log. When additional arguments (`...`) are given, msg is treated as a format string.
+@param ... Additional arguments to pass to @{string.format} when `msg` is a format string.
+]]
+local function log(tag, msg, ...)
+  expect(1, tag, "string")
+  expect(2, msg, "string")
 
-    local handle = fs.open(path, "a")
-    handle.writeLine(("[%s%s] %s: %s"):format(date, ms, prefix, msg))
-    handle.close()
-    i = i + 1
+  if size > max_size then
+    -- Rotate old files
+    fs.delete(old_path)
+    fs.move(path, old_path)
   end
+
+  if select('#', ...) > 0 then msg = msg:format(...) end
+
+  local now  = os.epoch("utc")
+  local date = os.date("%Y-%m-%d %H:%M:%S", now * 1e-3)
+  local ms = ("%.2f"):format(now % 1000 * 1e-3):sub(2)
+  local message = ("[%s%s] %s: %s\n"):format(date, ms, tag, msg)
+
+  local handle = fs.open(path, "a")
+  handle.write(message)
+  handle.close()
+  size = size + #message
 end
+
+--[[- Create a logging function for a given tag.
+@tparam string tag A tag for this logger.
+@treturn function(msg: string, ...: any):nil The logger function.
+]]
+local function get_logger(tag)
+  expect(1, tag, "string")
+  return function(...) return log(tag, ...) end
+end
+
+return {
+  log = log,
+  get_logger = get_logger,
+}

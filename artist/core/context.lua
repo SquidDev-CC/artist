@@ -12,25 +12,29 @@ local Peripherals = require "artist.core.peripherals"
 
 local Context = class "artist.core.context"
 
+local sentinel = {}
+
 function Context:initialise()
   self.modules = {}
   self.threads = {}
 
-  self.log = log(".artist.d/log")
   self.config = Config(".artist.d/config.lua")
   self.mediator = Mediator()
   self.peripherals = self:require(Peripherals)
 end
 
 function Context:require(module)
+  expect(1, module, "string", "table")
+
   if type(module) == "string" then module = require(module) end
 
   local instance = self.modules[module]
-  if instance == true then
+  if instance == sentinel then
     error("Loop in loading " .. tostring(module), 2)
   elseif instance == nil then
-    self.modules[module] = true
+    self.modules[module] = sentinel
     instance = module(self)
+    if instance == nil then instance = true end
     self.modules[module] = instance
   end
 
@@ -38,7 +42,7 @@ function Context:require(module)
 end
 
 function Context:add_thread(func)
-  if type(func) ~= "function" then error("bad argument #1, expected function") end
+  expect(1, func, "function")
   table.insert(self.threads, function() trace.call(func) end)
 end
 
@@ -48,20 +52,6 @@ function Context:run()
     local current = term.current()
     if current.endPrivateMode then current.endPrivateMode() end
     error(res, 0)
-  end
-end
-
-function Context:logger(prefix)
-  expect(1, prefix, "string")
-
-  local log = self.log
-  return function(msg, ...)
-    msg = tostring(msg)
-    if select('#', ...) == 0 then
-      log(prefix, msg)
-    else
-      log(prefix, msg:format(...))
-    end
   end
 end
 

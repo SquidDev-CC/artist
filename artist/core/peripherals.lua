@@ -2,6 +2,7 @@
 
 local class = require "artist.lib.class"
 local trace = require "artist.lib.trace"
+local log = require "artist.lib.log".get_logger(...)
 
 local func_info = function(fn)
   if type(debug) == "table" and debug.getinfo then
@@ -16,8 +17,6 @@ local Peripherals = class "artist.core.peripherals"
 
 function Peripherals:initialise(context)
   local mediator = context.mediator
-  local log = context:logger("Peripherals")
-  self.log = log
 
   self._active_filter = false
 
@@ -37,11 +36,11 @@ function Peripherals:initialise(context)
           filter = table.concat(filter, " ")
         end
 
-        log("Executing " .. func_info(cur_task.fn) .. " on " .. filter)
+        log("Executing %s on %s", func_info(cur_task.fn), filter)
 
         local clock = os.clock()
         trace.call(function() return cur_task:fn() end)
-        log(("Finished executing in %.2fs"):format((os.clock() - clock)))
+        log("Finished executing in %.2fs", (os.clock() - clock))
 
         cur_task, cur_filter = nil, nil
       else
@@ -96,7 +95,7 @@ function Peripherals:wrap(name)
   for method, func in pairs(wrapped) do
     out[method] = function(...)
       if not self:is_enabled(name) then
-        self.log(("Illegal use of peripheral %s (%s is currently enabled)"):format(name, self._active_filter))
+        log("Illegal use of peripheral %s (%s is currently enabled)", name, self._active_filter)
         error("Peripheral " .. name .. " is not enabled", 2)
       end
 

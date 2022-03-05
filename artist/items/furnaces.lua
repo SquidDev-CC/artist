@@ -5,6 +5,7 @@
 
 local class = require "artist.lib.class"
 local tbl = require "artist.lib.tbl"
+local log = require "artist.lib.log".get_logger(...)
 
 local Items = require "artist.core.items"
 
@@ -15,7 +16,6 @@ local Furnaces = class "artist.items.Furnaces"
 function Furnaces:initialise(context)
   local items = context:require(Items)
   local inventories = context:require "artist.items.inventories"
-  local log = context:logger("Furnace")
 
   local config = context.config
     :group("furnace", "Options related to furnace automation")
@@ -113,7 +113,6 @@ function Furnaces:initialise(context)
     while true do
       sleep(delay)
 
-      name = next(furnaces, name)
       if furnaces[name] then
         name = next(furnaces, name)
       else
