@@ -93,6 +93,5 @@ return function(context)
   context.peripherals:execute {
     fn = load_cache,
     priority = 1e6,
-    peripheral = true,
   }
 end

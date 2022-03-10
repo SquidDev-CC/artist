@@ -1,7 +1,6 @@
 --- Represents a system which shedules tasks for peripherals
 
 local class = require "artist.lib.class"
-local trace = require "artist.lib.trace"
 local log = require "artist.lib.log".get_logger(...)
 
 local func_info = function(fn)
@@ -18,7 +17,7 @@ local Peripherals = class "artist.core.peripherals"
 function Peripherals:initialise(context)
   local mediator = context.mediator
 
-  self._active_filter = false
+  self._in_task = false
 
   local queue = {}
   self.queue = queue
@@ -27,19 +26,10 @@ function Peripherals:initialise(context)
   local main_thread = coroutine.create(function()
     while true do
       if cur_task then
-        local filter = cur_task.peripheral
-        if filter == true then filter = "all peripherals"
-        elseif filter == false then filter = "no peripheral"
-        elseif type(filter) == "table" then
-          filter = {}
-          for k in pairs(cur_task.peripheral) do filter[#filter + 1] = k end
-          filter = table.concat(filter, " ")
-        end
-
-        log("Executing %s on %s", func_info(cur_task.fn), filter)
+        log("Executing %s", func_info(cur_task.fn))
 
         local clock = os.clock()
-        trace.call(function() return cur_task:fn() end)
+        cur_task:fn()
         log("Finished executing in %.2fs", os.clock() - clock)
 
         cur_task, cur_filter = nil, nil
@@ -64,9 +54,9 @@ function Peripherals:initialise(context)
       end
 
       if cur_task and (cur_filter == nil or event[1] == cur_filter or event[1] == "terminate") then
-        self._active_filter = cur_task.peripheral
+        self._in_task = true
         local ok, res = coroutine.resume(main_thread, table.unpack(event, 1, event.n))
-        self._active_filter = false
+        self._in_task = false
 
         if not ok then error(res, 0) end
 
@@ -74,14 +64,6 @@ function Peripherals:initialise(context)
       end
     end
   end)
-end
-
-function Peripherals:is_enabled(name)
-  local filter = self._active_filter
-  if filter == false then return false end
-  if filter == true or filter == name then return true end
-  if type(filter) == "table" and filter[name] then return true end
-  return false
 end
 
 --- Custom function to wrap peripherals, including a delay
@@ -94,9 +76,9 @@ function Peripherals:wrap(name)
   local out = { _name = name }
   for method, func in pairs(wrapped) do
     out[method] = function(...)
-      if not self:is_enabled(name) then
-        log("Illegal use of peripheral %s (%s is currently enabled)", name, self._active_filter)
-        error("Peripheral " .. name .. " is not enabled", 2)
+      if not self._in_task then
+        log("Illegal use of peripheral %s outside task queue", name)
+        error("Cannot use peripheral outside of task queue", 2)
       end
 
       local res = table.pack(pcall(func, ...))
@@ -117,10 +99,8 @@ function Peripherals:execute(task)
 
   if task.priority == nil then task.priority = 0 end
   if task.unique ~= true then task.unique = false end
-  if task.peripheral == nil then task.peripheral = false end
 
   local queue = self.queue
-  local inserted = false
 
   -- If we're a unique task then attempt to replace the existing one
   if task.unique then
@@ -139,14 +119,12 @@ function Peripherals:execute(task)
     end
   end
 
-  -- We've not inserted so look for something with a lower priority
-  if not inserted then
-    for i = 1, #queue do
-      if queue[i].priority < task.priority then
-        table.insert(queue, i, task)
-        inserted = true
-        break
-      end
+  local inserted = false
+  for i = 1, #queue do
+    if queue[i].priority < task.priority then
+      table.insert(queue, i, task)
+      inserted = true
+      break
     end
   end
 

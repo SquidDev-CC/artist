@@ -17,7 +17,6 @@ return function(context)
   context.mediator:subscribe("items.extract", function(to, hash, count)
     context.peripherals:execute {
       fn = extract,
-      peripheral = true,
       priority = 30,
 
       to    = to,

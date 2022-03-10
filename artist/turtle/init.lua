@@ -68,7 +68,6 @@ return function(context)
       fn = turtle_dropoff,
       priority = 10,
       unique = true,
-      peripheral = true,
     }
   end)
 
@@ -78,7 +77,6 @@ return function(context)
     context.peripherals:execute {
       fn = turtle_pickup,
       priority = 30,
-      peripheral = true,
 
       hash  = hash,
       count = quantity,

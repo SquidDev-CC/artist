@@ -32,7 +32,6 @@ function Inventories:initialise(context)
     if remote and remote.list and remote.getItemMeta then
       peripherals:execute {
         fn = function() items:load_peripheral(name, remote) end,
-        peripheral = name,
       }
     end
   end)
@@ -86,7 +85,7 @@ function Inventories:initialise(context)
       if name ~= nil then
         peripherals:execute {
           fn = check_inventory,
-          name = name, peripheral = name,
+          name = name,
         }
       end
     end
@@ -95,7 +94,6 @@ function Inventories:initialise(context)
   peripherals:execute {
     fn = add_inventories,
     priority = 100,
-    peripheral = true,
   }
 end
 

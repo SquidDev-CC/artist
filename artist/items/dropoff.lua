@@ -51,7 +51,6 @@ return function(context)
         fn = dropoff,
         priority = 10,
         unique = true,
-        peripheral = dropoff_chests,
       }
 
       sleep(config.delay)

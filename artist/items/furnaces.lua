@@ -125,7 +125,7 @@ function Furnaces:initialise(context)
       if name ~= nil then
         context.peripherals:execute {
           fn = check_furnace,
-          name = name, peripheral = true,
+          name = name,
         }
       end
     end
