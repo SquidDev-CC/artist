@@ -22,7 +22,7 @@ function Furnaces:initialise(context)
     :define("cold_rescan", "The delay between rescanning cold (non-smelting) furnaces", 10)
     :define("hot_rescan", "The delay between rescanning hot (smelting) furnaces", 2)
     :define("ignored", "A list of ignored furnace peripherals", {}, tbl.lookup)
-    :define("types", "A list of furnace types", { "minecraft:furnace"}, tbl.lookup)
+    :define("types", "A list of furnace types", { "minecraft:furnace" }, tbl.lookup)
     :define("fuels", "Possible fuel items", {
       "minecraft:charcoal",
       "minecraft:coal",
@@ -44,7 +44,7 @@ function Furnaces:initialise(context)
     self.hot_furnaces[name] = {
       name = name,
       remote = context.peripherals:wrap(name),
-      cooking = true
+      cooking = true,
     }
     context.mediator:publish("furnaces.change")
   end)
@@ -137,13 +137,13 @@ function Furnaces:initialise(context)
       self.hot_furnaces[name] = {
         name = name,
         remote = context.peripherals:wrap(name),
-        cooking = true
+        cooking = true,
       }
       context.mediator:publish("furnaces.change")
     end
   end
 
-  --- Periodically rescans all furnaces, with
+  -- Periodically rescans all furnaces, with
   context:add_thread(function() check_furnaces(self.hot_furnaces, config.hot_rescan) end)
   context:add_thread(function() check_furnaces(self.cold_furnaces, config.cold_rescan) end)
 end

@@ -69,7 +69,7 @@ return function(context, extract_items)
       dialogue_quantity = dialogue {
         x = dx + 1, y = dy + 1, width = dwidth, height = dheight,
         message = "Extract: " .. item.displayName,
-        complete = function(x) if x == "" then return { "64" } else return {} end end
+        complete = function(x) if x == "" then return { "64" } else return {} end end,
       }
 
       dialogue_quantity.item = item

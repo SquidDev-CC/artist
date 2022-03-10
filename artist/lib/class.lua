@@ -13,7 +13,7 @@ local class_mt = {
     local tbl = setmetatable({}, self.__index)
     tbl:initialise(...)
     return tbl
-  end
+  end,
 }
 
 return function(name)

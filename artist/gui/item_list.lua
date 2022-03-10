@@ -1,5 +1,5 @@
-local match = require "artist.lib.match"
-local gets = require "artist.lib.tbl".gets
+local fuzzy = require "artist.lib.fuzzy"
+local field = require "cc.expect".field
 
 local function compare_count(a, b)
   if a.count == b.count then
@@ -38,7 +38,7 @@ local function build_list(items, filter)
         local annotations = item.annotations
         for i = 1, #annotations do
           local annotation = annotations[i]
-          local annotation_score = match(annotation.value, filter) * (annotation.search_factor or 1)
+          local annotation_score = (fuzzy(annotation.value, filter) or 0) * (annotation.search_factor or 1)
           if annotation_score > score then score = annotation_score end
         end
 
@@ -57,10 +57,10 @@ local function build_list(items, filter)
 end
 
 return function(options)
-  local y = gets(options, "y", "number")
-  local height = gets(options, "height", "number")
+  local y = field(options, "y", "number")
+  local height = field(options, "height", "number")
 
-  local selected = gets(options, "selected", "function")
+  local selected = field(options, "selected", "function")
 
   local items = {}
   local display_items = {}
@@ -161,7 +161,7 @@ return function(options)
           end
 
           -- Setup our context for rendering
-          local format = (" %" .. maxk .. "s: %-" .. maxv .. "s ")
+          local format = " %" .. maxk .. "s: %-" .. maxv .. "s "
           term.setBackgroundColor(colours.cyan)
 
           -- Write some padding beforehand

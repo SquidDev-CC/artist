@@ -14,7 +14,8 @@ local count = 0
 local function check_in()
   count = count + 1
   if count > 1e4 then
-    os.queueEvent("artist_check_in"); os.pullEvent("artist_check_in")
+    os.queueEvent("artist_check_in")
+    os.pullEvent("artist_check_in")
     count = 0
   end
 end
@@ -32,15 +33,15 @@ local function serialiseImpl(t, tracking, out)
 
     local seen = {}
     local first = true
-    for k,v in ipairs(t) do
+    for k, v in ipairs(t) do
       if first then first = false else out[#out + 1] = "," end
       seen[k] = true
       serialiseImpl(v, tracking, out)
     end
-    for k,v in pairs(t) do
+    for k, v in pairs(t) do
       if not seen[k] then
         if first then first = false else out[#out + 1] = "," end
-        if type(k) == "string" and not luaKeywords[k] and string.match( k, "^[%a_][%a%d_]*$" ) then
+        if type(k) == "string" and not luaKeywords[k] and string.match(k, "^[%a_][%a%d_]*$") then
           out[#out + 1] = k .. "="
           serialiseImpl(v, tracking, out)
         else
@@ -63,7 +64,7 @@ end
 
 local function serialise(t)
   local out = {}
-  serialiseImpl( t, {}, out)
+  serialiseImpl(t, {}, out)
   return table.concat(out)
 end
 
@@ -100,5 +101,5 @@ return {
       h.close()
       return out
     end
-  end
+  end,
 }

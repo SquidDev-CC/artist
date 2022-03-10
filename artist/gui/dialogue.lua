@@ -1,5 +1,5 @@
 local read = require "artist.gui.read"
-local gets = require "artist.lib.tbl".gets
+local field = require "cc.expect".field
 
 local function draw_border_cell(term, back, border, char, invert)
   if invert then
@@ -51,9 +51,9 @@ for k, v in pairs(diag_colours) do
 end
 
 return function(options)
-  local dx, dy = gets(options, "x", "number"), gets(options, "y", "number")
-  local dwidth, dheight = gets(options, "width", "number"), gets(options, "height", "number")
-  local message = gets(options, "message", "string")
+  local dx, dy = field(options, "x", "number"), field(options, "y", "number")
+  local dwidth, dheight = field(options, "width", "number"), field(options, "height", "number")
+  local message = field(options, "message", "string")
   if #message > dwidth - 2 then message = message:sub(1, dwidth - 5) .. "..." end
 
   -- Read input

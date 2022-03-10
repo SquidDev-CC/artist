@@ -1,7 +1,5 @@
 --- A helper module to locate the current turtle
 
-local peripherals = peripheral.getNames()
-
 -- Try to use CC:T's getNameLocal
 local this_turtle
 for _, side in ipairs(redstone.getSides()) do

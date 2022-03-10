@@ -46,7 +46,7 @@ return function(context)
           value = ("%s (%d:%02d)"):format(
             effect.name:gsub("^effect%.", ""),
             math.floor(effect.duration / 60),
-            effect.duration % 60)
+            effect.duration % 60),
         })
       end
     end
@@ -60,7 +60,7 @@ return function(context)
     if meta.computer and meta.computer.id then
       table.insert(annotations, {
         key = "Computer",
-        value = ("#%d (%s)"):format(meta.computer.id, meta.computer.family)
+        value = ("#%d (%s)"):format(meta.computer.id, meta.computer.family),
       })
     end
   end)

@@ -66,7 +66,7 @@ function Inventories:initialise(context)
     items:load_peripheral(name, inventory.remote)
   end
 
-  --- Add a thread which periodically rescans all peripherals
+  -- Add a thread which periodically rescans all peripherals
   context:add_thread(function()
     local name = nil
     while true do

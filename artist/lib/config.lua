@@ -28,7 +28,7 @@ function Group:initialise(underlying, name, comment)
 
         return item.transform(data)
       end
-    end
+    end,
   })
 end
 
@@ -60,7 +60,7 @@ function Group:get() return self.entries end
 
 local Config = class "artist.lib.config"
 
-function Config:initialise(path, log)
+function Config:initialise(path)
   self.path = path
 
   local handle = fs.open(path, "r")

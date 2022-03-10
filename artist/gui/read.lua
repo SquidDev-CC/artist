@@ -1,4 +1,4 @@
-local gets, getso = require "artist.lib.tbl".gets, require "artist.lib.tbl".getso
+local field = require "cc.expect".field
 
 local function clamp(value, min, max)
   if value < min then return min end
@@ -325,15 +325,15 @@ local function read(term, fnComplete, sDefault, fnChanged, nCompleteFg)
 end
 
 return function(options)
-  local x, y = gets(options, "x", "number"), gets(options, "y", "number")
-  local width = gets(options, "width", "number")
+  local x, y = field(options, "x", "number"), field(options, "y", "number")
+  local width = field(options, "width", "number")
 
-  local fg, bg = gets(options, "fg", "number"), gets(options, "bg", "number")
-  local complete_fg = getso(options, "complete_fg", "number") or colours.lightGrey
+  local fg, bg = field(options, "fg", "number"), field(options, "bg", "number")
+  local complete_fg = field(options, "complete_fg", "number", "nil") or colours.lightGrey
 
-  local complete = getso(options, "complete", "function")
-  local default = getso(options, "default", "string")
-  local changed = getso(options, "changed", "function")
+  local complete = field(options, "complete", "function", "nil")
+  local default = field(options, "default", "string", "nil")
+  local changed = field(options, "changed", "function", "nil")
 
   local read_coroutine, read_window
 

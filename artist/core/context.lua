@@ -3,7 +3,6 @@
 local expect = require "cc.expect".expect
 
 local class = require "artist.lib.class"
-local log = require "artist.lib.log"
 local trace = require "artist.lib.trace"
 
 local Config = require "artist.lib.config"

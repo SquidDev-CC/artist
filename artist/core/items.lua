@@ -65,7 +65,7 @@ function Items:get_item(hash, obj, slot)
   entry = self.item_cache[hash]
   if entry then return entry end
 
-  entry = { hash = hash, count = 0, meta = meta, sources = {}, }
+  entry = { hash = hash, count = 0, meta = meta, sources = {} }
   self.item_cache[hash] = entry
   return entry
 end

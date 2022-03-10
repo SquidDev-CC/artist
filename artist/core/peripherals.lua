@@ -40,7 +40,7 @@ function Peripherals:initialise(context)
 
         local clock = os.clock()
         trace.call(function() return cur_task:fn() end)
-        log("Finished executing in %.2fs", (os.clock() - clock))
+        log("Finished executing in %.2fs", os.clock() - clock)
 
         cur_task, cur_filter = nil, nil
       else
