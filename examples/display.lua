@@ -39,7 +39,7 @@ return function(context)
 
     local used_slots, full_slots, total_slots = 0, 0, 0
     for _, inventory in pairs(items.inventories) do
-      for _, slot in pairs(inventory.slots) do
+      for _, slot in pairs(inventory.slots or {}) do
         total_slots = total_slots + 1
 
         if slot.count > 0 then
@@ -47,8 +47,8 @@ return function(context)
           -- Look up the item's metadata in the cache to get the max stack size.
           -- If the item isn't available, assume the slot is full.
           local item = items.item_cache[slot.hash]
-          if item then
-            full_slots = full_slots + (slot.count / item.meta.maxCount)
+          if item and item.details then
+            full_slots = full_slots + (slot.count / item.details.maxCount)
           else
             full_slots = full_slots + 1
           end
@@ -74,8 +74,8 @@ return function(context)
   changes and redraw when the inventory system changes instead. However, some
   changes happen in quick succession, and so we add a little debouncing in.
 
-  We do this by starting a timer when a change comes in, then using mediator as
-  a glorified os.pullEvent to listen to the timer and redraw.
+  We do this by starting a timer when a change comes in, then spawning a
+  separate task which waits for this timer and redraws.
   ]]
   local next_redraw = nil
   local function queue_redraw()
@@ -83,18 +83,21 @@ return function(context)
     next_redraw = os.startTimer(0.2)
   end
 
-  context.mediator:subscribe("event.timer", function(id)
-    if next_redraw ~= id then return end
-    next_redraw = nil
-    redraw()
-  end)
-
   -- Subscribe to several events, queuing a redraw.
   context.mediator:subscribe("items.inventories_change", queue_redraw)
   context.mediator:subscribe("items.change", queue_redraw)
   context.mediator:subscribe("furnaces.change", queue_redraw)
 
-  -- Draw the monitor to start off with, then regenerate our config file and run
-  -- artist!
-  redraw()
+  -- And redraw when the timer fires.
+  context:spawn(function(id)
+    redraw()
+
+    while true do
+      local _, id = os.pullEvent("timer")
+      if id == next_redraw then
+        next_redraw = nil
+        redraw()
+      end
+    end
+  end)
 end
