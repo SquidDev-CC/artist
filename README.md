@@ -1,13 +1,9 @@
 # A Rather Tremendous Item SysTem
-
-<p align="center"><img src="https://i.imgur.com/3PkUJnu.gif"
-  title="Running Artist from Mincraft"
-  alt="An example GIF of running artist, inserting and extracting items."
-/></p>
-
 Artist is an inventory management system for CC: Tweaked (requires MC 1.16.x
 or later). One could think of it as a budget AE network. It offers an easy way
 to store and extract items, but powered entirely through ComputerCraft.
+
+https://user-images.githubusercontent.com/4346137/159051788-2664b57e-b184-4e1d-b759-99e5c010d539.mp4
 
 ## Features
  - Index an arbitrary number of inventories (chests, barrels, etc...), allowing
