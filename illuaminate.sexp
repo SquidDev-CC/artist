@@ -6,7 +6,8 @@
 
   (site
     (title "artist")
-    (source-link https://github.com/SquidDev-CC/artist/blob/${commit}/${path}#L${line}))
+    (source-link https://github.com/SquidDev-CC/artist/blob/${commit}/${path}#L${line})
+    (styles _site/custom.css))
 
   (library-path /src/))
 

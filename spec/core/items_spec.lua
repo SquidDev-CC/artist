@@ -77,7 +77,7 @@ describe("artist.core.items", function()
     end
   end)
 
-  describe("loading and unloading of inventories", function()
+  describe("extracting items", function()
     it("transfers to an inventory", function()
       local world, context, items, inv1 = basic_setup()
       local inv2 = world:add_inventory("inventory_2")
@@ -131,6 +131,65 @@ describe("artist.core.items", function()
 
       expect(count(items, "minecraft:dirt")):eq(0)
       expect(inv2.contents[1]):same { name = "minecraft:dirt", count = 62 }
+    end)
+  end)
+
+  describe("inserting items", function()
+    it("rescans the inventory list() calls.", function()
+      local world, context, items, inv1 = basic_setup()
+      local inv2 = world:add_inventory("inventory_2")
+      inv2.contents[1] = { name = "minecraft:dirt", count = 64 }
+      inv2.contents[2] = { name = "minecraft:cobblestone", count = 64 }
+
+      helpers.simulate(world, context, function()
+        items:load_peripheral(inv1.name)
+      end)
+
+      local old_list, list_called = inv1.methods.list, 0
+      inv1.methods.list = function(...)
+        list_called = list_called + 1
+        return old_list(...)
+      end
+
+      helpers.simulate(world, context, function() items:insert(inv2.name, 1, 64) end)
+
+      expect(list_called):describe(".list() is only called once."):eq(1)
+      expect(count(items, "minecraft:dirt")):eq(140)
+      expect(inv2.contents[1]):eq(nil)
+      expect(inv1.contents[3]):same { name = "minecraft:dirt", count = 64 }
+      expect(inv1.contents[4]):same { name = "minecraft:dirt", count = 12 }
+
+      helpers.simulate(world, context, function() items:insert(inv2.name, 2, 64) end)
+
+      expect(list_called):describe(".list() is called once more."):eq(2)
+      expect(count(items, "minecraft:cobblestone")):eq(96)
+      expect(inv2.contents[2]):eq(nil)
+      expect(inv1.contents[2]):same { name = "minecraft:cobblestone", count = 64 }
+      expect(inv1.contents[5]):same { name = "minecraft:cobblestone", count = 32 }
+    end)
+
+    it("de-duplicates list() calls.", function()
+      local world, context, items, inv1 = basic_setup()
+      local inv2 = world:add_inventory("inventory_2")
+      inv2.contents[1] = { name = "minecraft:dirt", count = 64 }
+      inv2.contents[2] = { name = "minecraft:dirt", count = 64 }
+
+      helpers.simulate(world, context, function()
+        items:load_peripheral(inv1.name)
+      end)
+
+      local old_list, list_called = inv1.methods.list, 0
+      inv1.methods.list = function(...)
+        list_called = list_called + 1
+        return old_list(...)
+      end
+
+      helpers.simulate(world, context, function()
+        items:insert(inv2.name, 1, 64)
+        items:insert(inv2.name, 2, 64)
+      end)
+
+      expect(list_called):describe(".list() is only called once."):eq(1)
     end)
   end)
 
@@ -194,6 +253,13 @@ describe("artist.core.items", function()
 
               log(("items:extract(%q, %q, %d)"):format(dest, item, count))
               items:extract(dest, item, count)
+            else
+              local count = math.random(1, 100)
+              local slot = math.random(27)
+              local source = invs[math.random(attachable_inv_n + 1, inv_n)].name
+
+              log(("items:insert(%q, %q, %d)"):format(source, slot, count))
+              items:insert(source, slot, count)
             end
 
             helpers.check_invariant(world, items, false)

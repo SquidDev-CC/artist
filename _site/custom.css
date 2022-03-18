@@ -1,0 +1,8 @@
+pre.highlight {
+  background: var(--background-2);
+  padding: 2px;
+}
+
+summary {
+  cursor: pointer;
+}

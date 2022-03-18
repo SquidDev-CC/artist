@@ -1,3 +1,4 @@
 /.artist.d
 /artist.lua
-/_site
+/_site/*
+!/_site/custom.css
