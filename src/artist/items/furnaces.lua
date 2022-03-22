@@ -111,7 +111,7 @@ function Furnaces:initialise(context)
     -- First attach all furnaces as hot, as that ensures they get ticked earlier.
     for _, name in ipairs(peripheral.getNames()) do
       if self:enabled(name) then
-        log("Adding furnace %s", arg)
+        log("Adding furnace %s", name)
         self.hot_furnaces[name] = make_furnace(name)
       end
     end

@@ -9,9 +9,11 @@ https://user-images.githubusercontent.com/4346137/159051788-2664b57e-b184-4e1d-b
  - Index an arbitrary number of inventories (chests, barrels, etc...), allowing
    for insertion and extraction from them.
  - Simple interface to view and request items.
+ - Inventory operations run in parallel, allowing for near-instant scanning and
+   transfer of items.
  - Furnace management support, able to automatically refuel furnaces and insert
    smelted items into the main system.
- - Caching of item information, allowing for speedier startup.
+ - Automatically dispose of items when you've got too many.
 
 ## Install
  - Place down a turtle and some chests, and connect them all together with wired
@@ -27,6 +29,18 @@ Some options you may want to adjust:
 
  - `turtle` → `auto_drop`: Auto-drop items from the turtle's inventory when requested from the interface.
  - `furnace` → `fuels`: A list of valid fuels for the furnace.
+ - `dropoff` → `chests`: A list of "dropoff" chests. Items inserted into them are automatically transferred into the
+   main system.
+ - `trashcan` → `items`: Discard items when you've got too many of them. This requires another turtle on the network
+   running the [extra/trashcan.lua](extra/trashcan.lua) script. This is a mapping of items to the max number to stock.
+
+   **Example:**
+    ```lua
+    items = {
+      ["minecraft:cobblestone"] = 20000,
+      ["minecraft:cobbled_deepslate"] = 20000,
+    }
+    ```
 
 ## Extending
  - Artist is intended to be somewhat extensible, and you can register your own

@@ -1,4 +1,4 @@
-(sources /src /spec)
+(sources /src /spec /extra)
 
 (doc
   (json-index false)
@@ -20,7 +20,7 @@
   (lint
     (globals
       :max sleep term colours keys fs turtle peripheral redstone textutils http parallel window
-      write read)
+      rednet write read)
 
     (bracket-spaces
       (call no-space)
