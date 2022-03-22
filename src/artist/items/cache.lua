@@ -13,19 +13,11 @@ local VERSION = 1
 return function(context)
   local items = context:require "artist.core.items"
 
-  local config = context.config
-    :group("cache", "Cache item metadata to ensure faster startup speeds")
-    :define("enabled", "Whether the item cache is enabled", true)
-    :define("batch_time", "The minimum time to batch writes together", 5)
-    :get()
-
   local cached_items = {}
 
   -- When items have changed, reload the cache
   local changed_timer = nil
   context.mediator:subscribe("items.change", function(dirty)
-    if not config.enabled then return end
-
     -- Update the cache, determining whether it has changed or not
     -- TODO: We need to improve our handling of the initial load - we'll always
     -- dump the cache after loading no matter what which is a little inefficient.
@@ -43,13 +35,17 @@ return function(context)
     -- Schedule a save for 5 seconds time. This allows us to batch together multiple
     -- changes
     if changed and not changed_timer then
-      changed_timer = os.startTimer(config.batch_time)
+      changed_timer = os.startTimer(5)
     end
   end)
 
   -- Waits for a cache timer to occur, and saves.
   context:spawn(function()
     while true do
+      repeat
+        local _, id = os.pullEvent("timer")
+      until id == changed_timer
+
       while changed_timer do
         changed_timer = nil
 
@@ -58,14 +54,10 @@ return function(context)
         local finish = os.epoch("utc")
         log("Stored in %.2fs", (finish - start) * 1e-3)
       end
-
-      repeat
-        local _, id = os.pullEvent("timer")
-      until id == changed_timer
     end
   end)
 
-  if config.enabled then
+  do
     local start = os.epoch("utc")
 
     local cached = serialise.deserialise_from(".artist.d/cache")
