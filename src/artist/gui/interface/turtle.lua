@@ -2,13 +2,14 @@ local interface = require "artist.gui.interface"
 local concurrent = require "artist.lib.concurrent"
 local Items = require "artist.core.items"
 local turtle_helpers = require "artist.lib.turtle"
+local schema = require "artist.lib.config".schema
 
 return function(context)
   local this_turtle = turtle_helpers.get_name()
 
   local config = context.config
     :group("turtle", "Options related to the turtle interface")
-    :define("auto_drop", "Drop items from the turtle, rather than leaving them in the inventory.", false)
+    :define("auto_drop", "Drop items from the turtle, rather than leaving them in the inventory.", false, schema.boolean)
     :get()
 
   local items = context:require(Items)

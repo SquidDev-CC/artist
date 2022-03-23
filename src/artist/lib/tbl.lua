@@ -7,4 +7,7 @@ local function lookup(tbl)
   return out
 end
 
-return { lookup = lookup }
+--- Lookup table of all the adjacent sides of a computer.
+local rs_sides = lookup(redstone.getSides())
+
+return { lookup = lookup, rs_sides = rs_sides }

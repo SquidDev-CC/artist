@@ -1,12 +1,13 @@
 local tbl = require "artist.lib.tbl"
 local log = require "artist.lib.log".get_logger(...)
+local schema = require "artist.lib.config".schema
 
 return function(context)
   local items = context:require("artist.core.items")
   local config = context.config
     :group("trashcan", "Automatically dispose of items when you've got too many of them.")
-    :define("trashcan", "Peripheral name of the trashcan. If not given, this will attempt to find a turtle running the 'extra/trashcan.lua' script in the Artist repo.", nil)
-    :define("items", "Items which should automatically be trashed. This is a mapping of hashes to the maximum number to keep (e.g. {['minecraft:cobblestone'] = 20 * 1000}", {})
+    :define("trashcan", "Peripheral name of the trashcan. If not given, this will attempt to find a turtle running the 'extra/trashcan.lua' script in the Artist repo.", nil, schema.optional(schema.peripheral))
+    :define("items", "Items which should automatically be trashed. This is a mapping of hashes to the maximum number to keep (e.g. {['minecraft:cobblestone'] = 20 * 1000}", {}, schema.table)
     :get()
 
   local trashcan = config.trashcan
@@ -22,8 +23,8 @@ return function(context)
 
       while true do
         local trashcans = tbl.lookup({ rednet.lookup("artist.trashcan") })
-        local trashcan_peripheral = peripheral.find("turtle", function(_, p)
-          return trashcans[p.getID()] == true
+        local trashcan_peripheral = peripheral.find("turtle", function(name, p)
+          return not tbl.rs_sides[name] and trashcans[p.getID()] == true
         end)
 
         trashcan = trashcan_peripheral and peripheral.getName(trashcan_peripheral)

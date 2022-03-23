@@ -7,8 +7,7 @@ local class = require "artist.lib.class"
 local tbl = require "artist.lib.tbl"
 local log = require "artist.lib.log".get_logger(...)
 local Items = require "artist.core.items"
-
-local rs_sides = tbl.lookup(redstone.getSides())
+local schema = require "artist.lib.config".schema
 
 local function make_furnace(name)
   return {
@@ -80,14 +79,14 @@ function Furnaces:initialise(context)
 
   local config = context.config
     :group("furnace", "Options related to furnace automation")
-    :define("cold_rescan", "The delay between rescanning cold (non-smelting) furnaces", 10)
-    :define("hot_rescan", "The delay between rescanning hot (smelting) furnaces", 5)
-    :define("ignored", "A list of ignored furnace peripherals", {}, tbl.lookup)
-    :define("types", "A list of furnace types", { "minecraft:furnace" }, tbl.lookup)
+    :define("cold_rescan", "The delay between rescanning cold (non-smelting) furnaces", 10, schema.positive)
+    :define("hot_rescan", "The delay between rescanning hot (smelting) furnaces", 5, schema.positive)
+    :define("ignored", "A list of ignored furnace peripherals", {}, schema.list(schema.peripheral), tbl.lookup)
+    :define("types", "A list of furnace types", { "minecraft:furnace" }, schema.list(schema.string), tbl.lookup)
     :define("fuels", "Possible fuel items", {
       "minecraft:charcoal",
       "minecraft:coal",
-    })
+    }, schema.list(schema.string))
     :get()
 
   self._items = context:require(Items)
@@ -169,7 +168,7 @@ function Furnaces:add_ignored(name)
 end
 
 function Furnaces:enabled(name)
-  return rs_sides[name] == nil and self._ignored[name] == nil and self._furnace_types[peripheral.getType(name)] ~= nil
+  return tbl.rs_sides[name] == nil and self._ignored[name] == nil and self._furnace_types[peripheral.getType(name)] ~= nil
 end
 
 return Furnaces

@@ -2,6 +2,7 @@
 -- transferred into the main system.
 
 local log = require "artist.lib.log".get_logger(...)
+local schema = require "artist.lib.config".schema
 
 return function(context)
   local items = context:require "artist.core.items"
@@ -9,9 +10,9 @@ return function(context)
 
   local config = context.config
     :group("dropoff", "Defines chests where you can drop off items")
-    :define("chests", "The chest names available", {})
-    :define("cold_delay", "The time between rescanning dropoff chests when there's been no recent activity", 5)
-    :define("hot_delay", "The time between rescanning dropoff chests when there's been recent activity.", 0.2)
+    :define("chests", "The chest names available", {}, schema.list(schema.peripheral))
+    :define("cold_delay", "The time between rescanning dropoff chests when there's been no recent activity", 5, schema.positive)
+    :define("hot_delay", "The time between rescanning dropoff chests when there's been recent activity.", 0.2, schema.positive)
     :get()
 
   -- Don't bother to register anything if we've got no chests!

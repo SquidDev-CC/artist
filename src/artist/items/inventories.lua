@@ -8,8 +8,7 @@ local expect = require "cc.expect".expect
 local class = require "artist.lib.class"
 local tbl = require "artist.lib.tbl"
 local log = require "artist.lib.log".get_logger(...)
-
-local rs_sides = tbl.lookup(redstone.getSides())
+local schema = require "artist.lib.config".schema
 
 local Inventories = class "artist.items.Inventories"
 function Inventories:initialise(context)
@@ -17,9 +16,9 @@ function Inventories:initialise(context)
 
   local config = context.config
     :group("inventories", "Options handling how inventories are read")
-    :define("rescan", "The time between rescanning each inventory", 10)
-    :define("ignored_names", "A list of ignored inventory peripherals", {}, tbl.lookup)
-    :define("ignored_types", "A list of ignored inventory peripheral types", { "turtle" }, tbl.lookup)
+    :define("rescan", "The time between rescanning each inventory", 10, schema.positive)
+    :define("ignored_names", "A list of ignored inventory peripherals", {}, schema.list(schema.peripheral), tbl.lookup)
+    :define("ignored_types", "A list of ignored inventory peripheral types", { "turtle" }, schema.list(schema.string), tbl.lookup)
     :get()
 
   self.ignored_names, self.ignored_types = {}, {}
@@ -82,7 +81,7 @@ end
 
 function Inventories:enabled(name)
   expect(1, name, "string")
-  if rs_sides[name] or self.ignored_names[name] then return false end
+  if tbl.rs_sides[name] or self.ignored_names[name] then return false end
 
   local types, is_inventory = { peripheral.getType(name) }, false
 
