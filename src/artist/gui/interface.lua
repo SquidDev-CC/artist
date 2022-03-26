@@ -1,142 +1,57 @@
-local read = require "artist.gui.read"
-local dialogue = require "artist.gui.dialogue"
-local item_list = require "artist.gui.item_list"
+local gui = require "artist.gui.core"
+local ItemList = require "artist.gui.item_list"
+local keybinding = require "metis.input.keybinding"
 
 return function(context, extract_items)
-  local mediator = context.mediator
-
   local width, height = term.getSize()
 
-  -- Our local cache of items
-  local redraw_layer = false
-  local elements = {}
-  local active_control = nil
+  local ui = gui.UI(term.current())
+  local function pop_frame() ui:pop() end
 
-  local function sort_layer(a, b) return a.layer < b.layer end
-  local function set_layer(layer)
-    if redraw_layer == false then
-      redraw_layer = layer
-      os.queueEvent("artist_redraw")
-    elseif redraw_layer > layer then
-      redraw_layer = layer
-    end
-  end
-
-  local function attach(obj, layer)
-    if obj.layer then error("already attached", 2) end
-    obj.layer = layer
-    table.insert(elements, obj)
-    table.sort(elements, sort_layer)
-
-    -- If we've got an object
-    obj.attach(function()
-      obj.dirty = true
-      set_layer(layer)
-    end)
-
-    obj.dirty = true
-    set_layer(layer)
-  end
-
-  local function detach(obj)
-    if not obj.layer then error("not attached", 2) end
-
-    -- Remove from our layer list
-    for i = 1, #elements do
-      if elements[i] == obj then
-        table.remove(elements, i)
-        break
-      end
-    end
-
-    obj.layer = nil
-    obj.detach()
-    set_layer(0)
-  end
-
-  local dialogue_quantity = nil
-
-  -- The item list handles filtering and rendering of available items
-  local items = item_list {
-    y = 2,
-    height = height - 1,
+  local item_list = ItemList {
+    y = 2, height = height - 1,
     selected = function(item)
-      local dwidth, dheight = math.min(width - 2, 30), 8
-      local dx, dy = math.floor((width - dwidth) / 2), math.floor((height - dheight) / 2)
+      local dwidth, dheight = math.min(width - 2, 30), 9
+      local x, y = math.floor((width - dwidth) / 2) + 1, math.ceil((height - dheight) / 2) + 1
 
-      -- We provide a text box which uses 64 when empty. Yes, I'm sorry for how this
-      -- is implemented.
-      dialogue_quantity = dialogue {
-        x = dx + 1, y = dy + 1, width = dwidth, height = dheight,
-        message = "Extract: " .. item.displayName,
-        complete = function(x) if x == "" then return { "64" } else return {} end end,
-      }
+      local input = gui.Input { x = x + 1, y = y + 3, width = dwidth - 2, placeholder = "64", border = true }
 
-      dialogue_quantity.item = item
+      local function extract()
+        local quantity = input.line
+        if quantity == "" then quantity = 64 else quantity = tonumber(quantity) end
+        if quantity then extract_items(item.hash, quantity) end
+        ui:pop()
+      end
 
-      attach(dialogue_quantity, 2)
-      active_control = dialogue_quantity
+      ui:push(gui.Frame {
+        x = x, y = y, width = dwidth, height = dheight, title = "Extract: " .. item.displayName,
+        keymap = keybinding.create_keymap { ["enter"] = extract, ["C-d"] = pop_frame },
+        children = {
+          input,
+          gui.Button { x = x + 1, y = y + 5, text = "Extract", bg = "green", run = extract },
+          gui.Button { x = x + dwidth - 9, y = y + 5, text = "Cancel", bg = "red", run = pop_frame },
+        },
+      })
     end,
   }
 
-  local item_filter = read {
-    x = 1, y = 1, width = width,
-    fg = colours.black, bg = colours.white,
-    changed = items.update_filter,
-  }
-
-  -- When we receive an item difference we update the item list. This shedules
+  -- When we receive an item difference we update the item list. This schedules
   -- a redraw if required.
-  mediator:subscribe("item_list.update", items.update_items)
+  context.mediator:subscribe("item_list.update", function(items) item_list:update_items(items) end)
 
   context:spawn(function()
-    attach(items, 1)
-    attach(item_filter, 1)
-    active_control = item_filter
+    ui:push {
+      keymap = keybinding.create_keymap { ["C-d"] = function() ui:pop() end },
+      children = {
+        gui.Input {
+          x = 1, y = 1, width = width, fg = "black", bg = "white", placeholder = "Search...",
+          changed = function(value) item_list:set_filter(value) end,
+        },
+        item_list,
+      },
+    }
 
-    while true do
-      local ev = table.pack(os.pullEvent())
-
-      if dialogue_quantity ~= nil then
-        local ok, quantity = dialogue_quantity.update(ev)
-
-        if ok == false then
-          if quantity == "" then quantity = 64 else quantity = tonumber(quantity) end
-
-          if quantity then extract_items(dialogue_quantity.item.hash, quantity) end
-
-          detach(dialogue_quantity)
-          dialogue_quantity = nil
-          active_control = item_filter
-        end
-      else
-        items.update(ev)
-
-        local ok = item_filter.update(ev)
-        if ok == false then break end
-      end
-
-      if redraw_layer then
-        for i = 1, #elements do
-          local element = elements[i]
-          if element.layer > redraw_layer or element.dirty then
-            element.dirty = false
-            element.draw()
-          end
-        end
-
-        active_control.restore()
-        redraw_layer = false
-      end
-    end
-
-    detach(items)
-    detach(item_filter)
-
-    term.setCursorPos(1, 1)
-    term.setBackgroundColor(colours.black)
-    term.setTextColor(colours.white)
-    term.clear()
+    ui:run()
 
     -- Terrible hack to stop the event loop without showing a stack trace
     error(setmetatable({}, { __tostring = function() return "Interface exited" end }), 0)

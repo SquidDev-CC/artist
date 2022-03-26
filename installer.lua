@@ -1,12 +1,11 @@
 local files = {
   "artist/core/context.lua",
   "artist/core/items.lua",
-  "artist/gui/dialogue.lua",
+  "artist/gui/core.lua",
   "artist/gui/interface.lua",
   "artist/gui/interface/pickup_chest.lua",
   "artist/gui/interface/turtle.lua",
   "artist/gui/item_list.lua",
-  "artist/gui/read.lua",
   "artist/init.lua",
   "artist/items/annotate.lua",
   "artist/items/annotations.lua",
@@ -25,6 +24,7 @@ local files = {
   "artist/lib/turtle.lua",
   "artist/lib/widget.lua",
   "launch.lua",
+  "metis/input/keybinding.lua",
   "metis/string/fuzzy.lua",
 }
 local tasks = {}
