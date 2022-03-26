@@ -105,12 +105,11 @@ local function update_scroll(self, new_scroll)
   if self.mark_dirty then self:mark_dirty() end
 end
 
-ItemList.attach = ui.basic_attach
-function ItemList:detach() self.mark_dirty = nil end
+ItemList.attach, ItemList.detach = ui.basic_attach, ui.basic_detach
 
 function ItemList:draw(term, palette)
-  term.setBackgroundColor(palette.lightGrey)
-  term.setTextColor(palette.white)
+  term.setBackgroundColour(palette.lightGrey)
+  term.setTextColour(palette.white)
 
   term.setCursorPos(1, self._y)
   term.clearLine()
@@ -121,15 +120,15 @@ function ItemList:draw(term, palette)
   local format = "%" .. max_width .. "s \149 %s"
   term.write(format:format("Item", "Count"))
 
-  term.setTextColor(palette.white)
+  term.setTextColour(palette.white)
   for i = 1, self._height - 1 do
     local item = self._display_items[self._scroll + i]
 
     term.setCursorPos(1, i + self._y)
     if self._index == self._scroll + i and item then
-      term.setBackgroundColor(palette.lightGrey)
+      term.setBackgroundColour(palette.lightGrey)
     else
-      term.setBackgroundColor(palette.grey)
+      term.setBackgroundColour(palette.grey)
     end
     term.clearLine()
 
@@ -165,7 +164,7 @@ function ItemList:draw(term, palette)
 
       -- Setup our context for rendering
       local format = " %" .. maxk .. "s: %-" .. maxv .. "s "
-      term.setBackgroundColor(palette.cyan)
+      term.setBackgroundColour(palette.cyan)
 
       -- Write some padding beforehand
       term.setCursorPos(x, self._y + self._height - count - 1)

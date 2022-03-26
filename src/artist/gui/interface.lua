@@ -2,6 +2,23 @@ local gui = require "artist.gui.core"
 local ItemList = require "artist.gui.item_list"
 local keybinding = require "metis.input.keybinding"
 
+local function get_value(value)
+  if value == "" then return true, 64 end
+
+  local simple = tonumber(value)
+  if simple then return true, value end
+
+  if value:match("[%d()*+- ]") then
+    local fn = load("return " .. value, "=input", nil, {})
+    if fn then
+      local ok, res = pcall(fn)
+      if ok then return false, res end
+    end
+  end
+
+  return nil
+end
+
 return function(context, extract_items)
   local width, height = term.getSize()
 
@@ -11,25 +28,42 @@ return function(context, extract_items)
   local item_list = ItemList {
     y = 2, height = height - 1,
     selected = function(item)
-      local dwidth, dheight = math.min(width - 2, 30), 9
+      local dwidth, dheight = math.min(width - 2, 30), 10
       local x, y = math.floor((width - dwidth) / 2) + 1, math.ceil((height - dheight) / 2) + 1
 
-      local input = gui.Input { x = x + 1, y = y + 3, width = dwidth - 2, placeholder = "64", border = true }
+      local feedback = gui.Text { x = x + 1, y = y + 5, width = dwidth - 2, text = "" }
+
+      local input = gui.Input {
+        x = x + 1, y = y + 3, width = dwidth - 2, placeholder = "64", border = true,
+        changed = function(line)
+          local basic, value = get_value(line)
+          if basic then
+            feedback:set_text("")
+          elseif value then
+            feedback.fg = "lightGrey"
+            feedback:set_text("= " .. value)
+          else
+            feedback.fg = "red"
+            feedback:set_text("Malformed number")
+          end
+        end,
+      }
 
       local function extract()
-        local quantity = input.line
-        if quantity == "" then quantity = 64 else quantity = tonumber(quantity) end
+        local _, quantity = get_value(input.line)
         if quantity then extract_items(item.hash, quantity) end
         ui:pop()
       end
 
       ui:push(gui.Frame {
-        x = x, y = y, width = dwidth, height = dheight, title = "Extract: " .. item.displayName,
+        x = x, y = y, width = dwidth, height = dheight,
         keymap = keybinding.create_keymap { ["enter"] = extract, ["C-d"] = pop_frame },
         children = {
+          gui.Text { x = x + 1, y = y + 1, width = dwidth - 2, text = "Extract: " .. item.displayName },
           input,
-          gui.Button { x = x + 1, y = y + 5, text = "Extract", bg = "green", run = extract },
-          gui.Button { x = x + dwidth - 9, y = y + 5, text = "Cancel", bg = "red", run = pop_frame },
+          feedback,
+          gui.Button { x = x + 1, y = y + 6, text = "Extract", bg = "green", run = extract },
+          gui.Button { x = x + dwidth - 9, y = y + 6, text = "Cancel", bg = "red", run = pop_frame },
         },
       })
     end,

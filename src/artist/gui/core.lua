@@ -41,8 +41,8 @@ end
 local function void() end
 
 local function write_with(term, text, fg, bg)
-  term.setBackgroundColor(bg)
-  term.setTextColor(fg)
+  term.setBackgroundColour(bg)
+  term.setTextColour(fg)
   term.write(text)
 end
 
@@ -65,7 +65,7 @@ local function draw_border(term, back, border, x, y, width, height)
     term.setCursorPos(x, dy + y)
     draw_border_cell(term, back, border, "\149", true)
 
-    term.setBackgroundColor(back)
+    term.setBackgroundColour(back)
     term.write((" "):rep(width - 2))
 
     draw_border_cell(term, back, border, "\149", false)
@@ -131,6 +131,7 @@ end
 --------------------------------------------------------------------------------
 
 local function basic_attach(self, f) self.mark_dirty = f end
+local function basic_detach(self) self.mark_dirty = nil end
 local function basic_focus(self) self._focused = true self:mark_dirty() end
 local function basic_blur(self) self._focused = false self:mark_dirty() end
 
@@ -360,11 +361,11 @@ function Input:draw(term, palette, always)
   end
 
   local line = self.line
-  term.setBackgroundColor(palette[self.bg])
+  term.setBackgroundColour(palette[self.bg])
   if self.line ~= "" then
-    term.setTextColor(palette[self.fg])
+    term.setTextColour(palette[self.fg])
   else
-    term.setTextColor(palette.lightGrey)
+    term.setTextColour(palette.lightGrey)
     line = self.placeholder
   end
 
@@ -373,14 +374,12 @@ function Input:draw(term, palette, always)
 
   term.setCursorPos(self.x, self.y)
   term.write(string.sub(line, self.scroll + 1, self.scroll + self.width))
-
-  -- local len = math.min(#line, self.scroll + self.width) - self.scroll
-  -- term.write(string.rep(" ", self.width - len))
 end
 
 function Input:attach(f) self.mark_dirty = f end
 
 function Input:focus(term)
+  term.setTextColour(colours[self.fg])
   term.setCursorPos(self.x + self.pos - self.scroll, self.y)
   term.setCursorBlink(true)
 end
@@ -399,27 +398,55 @@ function Frame:initialise(options)
   self._width = field(options, "width", "number")
   self._height = field(options, "height", "number")
 
-  self._title = field(options, "title", "string", "nil") or ""
-  if #self._title > self._width - 2 then
-    self._title = self._title:sub(1, self._width - 5) .. "..."
-  end
-
   self.keymap = field(options, "keymap", "table", "nil")
   self.children = field(options, "children", "table", "nil")
 end
 
 function Frame:draw(term, palette)
-  term.setTextColor(palette.grey)
-  term.setBackgroundColor(palette.white)
+  term.setBackgroundColour(palette.white)
 
   local line = (" "):rep(self._width)
   for i = 1, self._height do
     term.setCursorPos(self._x, self._y + i - 1)
     term.write(line)
   end
+end
 
-  term.setCursorPos(self._x + 1, self._y + 1)
-  term.write(self._title)
+local Text = class "artist.gui.core.Text" --- @type Text
+
+function Text:initialise(options)
+  expect(1, options, "table")
+
+  self._x = field(options, "x", "number")
+  self._y = field(options, "y", "number")
+  self._width = field(options, "width", "number")
+
+  self.fg = field(options, "fg", "string", "nil") or "black"
+  self:set_text(field(options, "text", "string") or "")
+end
+
+function Text:set_text(text)
+  expect(1, text, "string")
+
+  if #text > self._width then
+    text = text:sub(1, self._width - 3) .. "..."
+  else
+    text = text .. (" "):rep(self._width - #text)
+  end
+
+  if text == self.text then return end
+
+  self._text = text
+  if self.mark_dirty then self:mark_dirty() end
+end
+
+Text.attach, Text.detach = basic_attach, basic_detach
+
+function Text:draw(term, palette)
+  term.setTextColour(palette[self.fg])
+  term.setBackgroundColour(palette.white)
+  term.setCursorPos(self._x, self._y)
+  term.write(self._text)
 end
 
 --------------------------------------------------------------------------------
@@ -560,8 +587,8 @@ function UI:run()
 
   local palette = setup_palette(term)
 
-  term.setBackgroundColor(colours.white)
-  term.setTextColor(colours.black)
+  term.setBackgroundColour(colours.white)
+  term.setTextColour(colours.black)
   term.clear()
 
   while #self._layers > 0 do
@@ -579,7 +606,7 @@ function UI:run()
     if self._redraw_layer then
       -- Capture cursor info and hide the cursor. If we're blinking, restore the
       -- cursor once drawing is done.
-      local blink, x, y = term.getCursorBlink(), term.getCursorPos()
+      local blink, fg, x, y = term.getCursorBlink(), term.getTextColour(), term.getCursorPos()
       if blink then
         term.setCursorBlink(false)
       end
@@ -593,17 +620,18 @@ function UI:run()
       self._redraw_layer = false
 
       if blink then
-        term.setCursorBlink(true)
+        term.setTextColour(fg)
         term.setCursorPos(x, y)
+        term.setCursorBlink(true)
       end
 
-      term.setBackgroundColor(colours.magenta)
+      term.setBackgroundColour(colours.magenta)
     end
   end
 
   term.setCursorPos(1, 1)
-  term.setBackgroundColor(colours.black)
-  term.setTextColor(colours.white)
+  term.setBackgroundColour(colours.black)
+  term.setTextColour(colours.white)
   term.clear()
 
   restore_palette(term, palette)
@@ -612,11 +640,12 @@ end
 return {
   draw_border = draw_border,
 
-  basic_attach = basic_attach,
+  basic_attach = basic_attach, basic_detach = basic_detach,
 
   Button = Button,
   Input = Input,
   Frame = Frame,
+  Text = Text,
 
   UI = UI,
 }
