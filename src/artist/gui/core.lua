@@ -80,7 +80,7 @@ end
 --------------------------------------------------------------------------------
 -- Palette support. We offer 2 palettes of 6 colours (could be more, these are
 -- just the ones we use), in a bright (normal) and dimmed (when masked by a
--- dialogue) variety.
+-- dialog) variety.
 --------------------------------------------------------------------------------
 
 local bright_colours = {
