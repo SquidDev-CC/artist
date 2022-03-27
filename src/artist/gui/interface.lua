@@ -1,23 +1,7 @@
 local gui = require "artist.gui.core"
+local extra = require "artist.gui.extra"
 local ItemList = require "artist.gui.item_list"
 local keybinding = require "metis.input.keybinding"
-
-local function get_value(value)
-  if value == "" then return true, 64 end
-
-  local simple = tonumber(value)
-  if simple then return true, value end
-
-  if value:match("[%d()*+- ]") then
-    local fn = load("return " .. value, "=input", nil, {})
-    if fn then
-      local ok, res = pcall(fn)
-      if ok then return false, res end
-    end
-  end
-
-  return nil
-end
 
 return function(context, extract_items)
   local width, height = term.getSize()
@@ -29,29 +13,14 @@ return function(context, extract_items)
     y = 2, height = height - 1,
     selected = function(item)
       local dwidth, dheight = math.min(width - 2, 30), 10
-      local x, y = math.floor((width - dwidth) / 2) + 1, math.ceil((height - dheight) / 2) + 1
+      local x, y = math.floor((width - dwidth) / 2) + 1, math.floor((height - dheight) / 2) + 1
 
-      local feedback = gui.Text { x = x + 1, y = y + 5, width = dwidth - 2, text = "" }
-
-      local input = gui.Input {
-        x = x + 1, y = y + 3, width = dwidth - 2, placeholder = "64", border = true,
-        changed = function(line)
-          local basic, value = get_value(line)
-          if basic then
-            feedback:set_text("")
-          elseif value then
-            feedback.fg = "lightGrey"
-            feedback:set_text("= " .. value)
-          else
-            feedback.fg = "red"
-            feedback:set_text("Malformed number")
-          end
-        end,
+      local input = extra.NumberInput {
+        x = x, y = y + 2, width = dwidth, placeholder = "64", default = 64,
       }
 
       local function extract()
-        local _, quantity = get_value(input.line)
-        if quantity then extract_items(item.hash, quantity) end
+        if input.value then extract_items(item.hash, input.value) end
         ui:pop()
       end
 
@@ -61,7 +30,6 @@ return function(context, extract_items)
         children = {
           gui.Text { x = x + 1, y = y + 1, width = dwidth - 2, text = "Extract: " .. item.displayName },
           input,
-          feedback,
           gui.Button { x = x + 1, y = y + 6, text = "Extract", bg = "green", run = extract },
           gui.Button { x = x + dwidth - 9, y = y + 6, text = "Cancel", bg = "red", run = pop_frame },
         },
@@ -69,13 +37,51 @@ return function(context, extract_items)
     end,
   }
 
+  local function push_furnace()
+    local item = item_list:get_selected()
+    if not item then return end
+
+    local dwidth, dheight = math.min(width - 2, 30), 10
+    local x, y = math.floor((width - dwidth) / 2) + 1, math.floor((height - dheight) / 2) + 1
+
+    local count_input = extra.NumberInput {
+      x = x, y = y + 2, width = dwidth - 14, placeholder = "Count", default = 64,
+    }
+
+    local furnace_input = extra.NumberInput {
+      x = x + dwidth - 14, y = y + 2, width = 14, placeholder = "Furnaces", default = false,
+    }
+
+    local function smelt()
+      if count_input.value and furnace_input.value ~= nil then
+        context:require("artist.items.furnaces"):smelt(item.hash, count_input.value, furnace_input.value or nil)
+      end
+      ui:pop()
+    end
+
+    ui:push(gui.Frame {
+      x = x, y = y, width = dwidth, height = dheight,
+      keymap = keybinding.create_keymap { ["enter"] = smelt, ["C-d"] = pop_frame },
+      children = {
+        gui.Text { x = x + 1, y = y + 1, width = dwidth - 2, text = "Smelt: " .. item.displayName },
+        count_input,
+        furnace_input,
+        gui.Button { x = x + 1, y = y + 6, text = "Smelt", bg = "green", run = smelt },
+        gui.Button { x = x + dwidth - 9, y = y + 6, text = "Cancel", bg = "red", run = pop_frame },
+      },
+    })
+  end
+
   -- When we receive an item difference we update the item list. This schedules
   -- a redraw if required.
   context.mediator:subscribe("item_list.update", function(items) item_list:update_items(items) end)
 
   context:spawn(function()
     ui:push {
-      keymap = keybinding.create_keymap { ["C-d"] = function() ui:pop() end },
+      keymap = keybinding.create_keymap {
+        ["C-d"] = function() ui:pop() end,
+        ["C-S-f"] = push_furnace,
+      },
       children = {
         gui.Input {
           x = 1, y = 1, width = width, fg = "black", bg = "white", placeholder = "Search...",

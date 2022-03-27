@@ -3,6 +3,7 @@
 -- This observes any furnaces attached to the network, and automatically fuels
 -- them and inserts the smelting results into the system.
 
+local expect = require "cc.expect".expect
 local class = require "artist.lib.class"
 local tbl = require "artist.lib.tbl"
 local log = require "artist.lib.log".get_logger(...)
@@ -163,12 +164,47 @@ function Furnaces:initialise(context)
 end
 
 function Furnaces:add_ignored(name)
-  if type(name) ~= "string" then error("bad argument #1, expected string", 2) end
+  expect(1, name, "string")
   self._ignored[name] = true
 end
 
 function Furnaces:enabled(name)
+  expect(1, name, "string")
   return tbl.rs_sides[name] == nil and self._ignored[name] == nil and self._furnace_types[peripheral.getType(name)] ~= nil
+end
+
+function Furnaces:smelt(hash, count, furnaces)
+  expect(1, hash, "string")
+  expect(2, count, "number")
+  expect(3, furnaces, "nil", "number")
+
+  -- Determine how many furnaces we can distribute items to.
+  local total_furnaces = 0
+  for _ in pairs(self.cold_furnaces) do total_furnaces = total_furnaces + 1 end
+  if furnaces and furnaces < total_furnaces then total_furnaces = furnaces end
+  if total_furnaces <= 0 then return end
+
+  -- And thus how many to put in to each furnace. We try to do it in batches of 8
+  -- to reduce fuel usage.
+  -- TODO: Allow configuring the batch size.
+  local item = self._items:get_item(hash)
+  count = math.min(item.count, count)
+  if count <= 0 then return end
+
+  log("Smelting %d x %s across %d furnaces", count, hash, total_furnaces)
+
+  local per_furnace = math.ceil(count / total_furnaces / 8) * 8
+
+  -- For each furnace, move the item and mark the furnace as hot.
+  for name, furnace in pairs(self.cold_furnaces) do
+    local transfer = math.min(count, per_furnace)
+    self._items:extract(name, hash, transfer, 1)
+
+    self.hot_furnaces[name], self.cold_furnaces[name] = furnace, nil
+
+    count = count - transfer
+    if count <= 0 then break end
+  end
 end
 
 return Furnaces

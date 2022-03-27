@@ -565,7 +565,7 @@ function UI:push(layer)
   end
   self._keybindings:set_keymap(layer.__focused and layer.__focused.keymap or layer.keymap or self._keymap)
 
-  mark_dirty(self, old_layer_idx)
+  mark_dirty(self, old_layer_idx - 1)
 end
 
 function UI:pop()

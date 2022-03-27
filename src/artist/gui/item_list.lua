@@ -268,4 +268,8 @@ function ItemList:set_filter(new_filter)
   if self.mark_dirty then self:mark_dirty() end
 end
 
+function ItemList:get_selected()
+  return self._display_items[self._index]
+end
+
 return ItemList

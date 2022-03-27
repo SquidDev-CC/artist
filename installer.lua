@@ -2,6 +2,7 @@ local files = {
   "artist/core/context.lua",
   "artist/core/items.lua",
   "artist/gui/core.lua",
+  "artist/gui/extra.lua",
   "artist/gui/interface.lua",
   "artist/gui/interface/pickup_chest.lua",
   "artist/gui/interface/turtle.lua",
