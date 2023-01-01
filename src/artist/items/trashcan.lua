@@ -14,6 +14,21 @@ return function(context)
   local recently_trashed = false
   local scan_timer
 
+
+  -- Enqueue some items to be trashed.
+  --
+  -- We employ some debouncing here, meaning we only evaluate trash rules every
+  -- 5 seconds by default. However, If we've recently trashed an item, quite
+  -- possible we'll need to do it again, so use a shorter timer. We go for 0.4s,
+  -- which is the time a turtle takes to drop an item.
+  local function queue_trash()
+    if scan_timer or not trashcan then return end
+
+    local delay = 5
+    if recently_trashed then delay = 0.4 end
+    scan_timer = os.startTimer(delay)
+  end
+
   if trashcan then
     context:require("artist.items.inventories"):add_ignored_name(trashcan)
   else
@@ -29,6 +44,8 @@ return function(context)
 
         trashcan = trashcan_peripheral and peripheral.getName(trashcan_peripheral)
         log("Found trashcan %s", trashcan)
+
+        queue_trash() -- Evaluate the rules in case we've got a new trashcan
 
         sleep(60)
       end
@@ -56,15 +73,6 @@ return function(context)
     end
   end)
 
-  -- Whenever items change, we'll want to rerun our rules. We debounce it using
-  -- a variable timer, just to avoid starting too many timers. If we've recently
-  -- trashed an item, quite possible we'll need to do it again, so use a shorter
-  -- timer. We go for 0.4s, which is the time a turtle takes to drop an item.
-  context.mediator:subscribe("items.change", function()
-    if scan_timer or not trashcan then return end
-
-    local delay = 5
-    if recently_trashed then delay = 0.4 end
-    scan_timer = os.startTimer(delay)
-  end)
+  -- Whenever items change, we'll want to rerun our rules.
+  context.mediator:subscribe("items.change", function() queue_trash()  end)
 end
