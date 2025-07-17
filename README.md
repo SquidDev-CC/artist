@@ -64,7 +64,8 @@ other item systems I'm aware of out there:
  - **[Turtlegistics]:** This was the first inventory system to become popular on [SwitchCraft]. I _believe_ it's the
    first to use the turtle's inventory as a drop-off and pickup point (Artist used separate chests beforehand).
  - **[Milo] (see also [this forum post][milo forum]):** Milo is probably the most powerful inventory system out there,
-   with support for crafting and remote item transfer (using Plethora's introspection module).
+   with support for crafting and remote item transfer (using Plethora's introspection module). While not offically on
+   the newer versions of minecraft, an unoffical guide to install it on versions 1.13 and above can be found [here][miloport].
 
 [forum post]: http://www.computercraft.info/forums2/index.php?/topic/27321-mc-189-1122-plethora/page__view__findpost__p__262475 "Artist on the ComputerCraft forums"
 [turtlegistics]: https://github.com/apemanzilla/turtlegistics "Tutlegistics on GitHub"
@@ -72,3 +73,4 @@ other item systems I'm aware of out there:
 [milo forum]: http://www.computercraft.info/forums2/index.php?/topic/29761-milo-crafting-and-inventory-system/
 [switchcraft]: https://switchcraft.pw "The SwitchCraft Minecraft server"
 [readline]: https://en.wikipedia.org/wiki/GNU_Readline "GNU Readline - Wikipedia"
+[miloport]: https://p.sc3.io/enAqFNAfy9
